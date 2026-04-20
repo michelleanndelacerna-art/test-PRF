@@ -1391,8 +1391,9 @@ function approveRequest(requestID, action, comments) {
     actedLevels = approvedLevels.length > 0 ? approvedLevels.slice() : [currentLevel];
 
     if (nextIndex < approvalChain.length) {
-      nextApprover = approvalChain[nextIndex];
-      nextApproverLabel = approvalSteps[nextIndex] ? approvalSteps[nextIndex].label : approvalChain[nextIndex];
+      const nextStep = approvalSteps[nextIndex];
+      nextApproverLabel = nextStep ? nextStep.label : approvalChain[nextIndex];
+      nextApprover = getApproverEmailByRole(nextApproverLabel, request) || approvalChain[nextIndex];
       newStatus = "Pending";
     } else {
       newStatus = "Approved";
@@ -2031,6 +2032,7 @@ function getApproverEmailByRole(roleLabel, request = null) {
   const roleMapping = {
     "legal": "Legal Team",
     "legal_team": "Legal Team",
+    "legal team": "Legal Team",
     "corporate hrod": "Corporate HROD",
     "corporate_hrod": "Corporate HROD",
     "plant head": "Plant Head",

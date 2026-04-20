@@ -2191,7 +2191,13 @@
         }
 
         function getCurrentApprovalStepIndex(request) {
-            return (request.approvalSteps || []).findIndex(step => step.approver === request.currentApprover || step.label === request.currentApprover);
+            const current = (request.currentApprover || '').toString().toLowerCase().trim();
+            if (!current) return -1;
+
+            return (request.approvalSteps || []).findIndex(step =>
+                (step.approver || '').toString().toLowerCase().trim() === current ||
+                (step.label || '').toString().toLowerCase().trim() === current
+            );
         }
 
         function getApprovalRemark(request, step, index) {
@@ -2586,7 +2592,7 @@
                         const apprState = getApprovalState(corpHrodAppr);
                         state = apprState ? apprState.state : 'completed';
                         stateLabel = apprState ? apprState.label : 'Complete';
-                    } else if (nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1) {
+                    } else if (currentIndex >= 4 || nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1) {
                         state = 'current';
                         stateLabel = 'In Progress';
                     } else if (status === 'Sourcing In Progress') {
