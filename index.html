@@ -2464,6 +2464,10 @@
                 let state = 'pending';
                 let stateLabel = 'Pending';
                 
+                // Determine if we are in Step 5 or Step 6 based on status or approval columns
+                const isInStep5 = (nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1 || legalAppr || corpHrodAppr);
+                const isInStep6 = (status === 'Sourcing In Progress' || recruitNotif);
+
                 // Check global status first
                 if (status === 'Disapproved') {
                     state = 'disapproved';
@@ -2471,11 +2475,16 @@
                 } else if (status === 'On Hold') {
                     state = 'on_hold';
                     stateLabel = 'On Hold';
-                } else if (status === 'Approved' || isInStepsOrCompleted) {
+                } else if (status === 'Approved' || isInStepsOrCompleted || isInStep5 || isInStep6) {
                     // Past initial approvals
                     if (step.phase === 1 || step.phase === 2) {
                         state = 'completed';
                         stateLabel = 'Approved';
+                    }
+                    // If we've reached Step 5 or 6, Steps 3 and 4 must be completed
+                    if ((isInStep5 || isInStep6) && (step.phase === 3 || step.phase === 4)) {
+                        state = 'completed';
+                        stateLabel = 'Complete';
                     }
                 }
                 
