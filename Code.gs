@@ -1592,6 +1592,12 @@ function saveStep3Data(requestID, step3Data) {
   if (statusIdx >= 0) {
     sheet.getRange(rowNumber, statusIdx + 1).setValue("Step 4: Review & Submit");
   }
+
+  // Mark Step 3 as completed in the sheet
+  const typeSelectionIdx = getRequestColumnIndex(headerMap, ["type selection approval", "type_selection_approval"]);
+  if (typeSelectionIdx >= 0) {
+    sheet.getRange(rowNumber, typeSelectionIdx + 1).setValue("Approved");
+  }
   
   appendApprovalHistoryEntry(requestID, {
     action: "Step 3 Data Saved",
@@ -1632,11 +1638,18 @@ function submitForStep5Approval(requestID) {
   
   // Set first approver in Step 5 chain
   const firstApprover = step5Chain[0];
-  const currentApproverIdx = getRequestColumnIndex(headerMap, ["next approver", "next_approver", "current approver", "current_approver", "approver level", "approver_level", "approverlevel"]);
-  if (currentApproverIdx >= 0) {
-    sheet.getRange(rowNumber, currentApproverIdx + 1).setValue(firstApprover);
-  } else {
-    Logger.log("WARNING: Could not find 'Current/Next Approver' column in submitForStep5Approval. Available columns: " + Object.keys(headerMap).join(", "));
+  const nextApproverColumnNames = ["next approver", "next_approver", "current approver", "current_approver", "approver level", "approver_level", "approverlevel"];
+  nextApproverColumnNames.forEach(colName => {
+    const idx = headerMap[colName.toLowerCase()];
+    if (idx !== undefined) {
+      sheet.getRange(rowNumber, idx + 1).setValue(firstApprover);
+    }
+  });
+
+  // Mark Step 4 as completed in the sheet
+  const reviewApprovalIdx = getRequestColumnIndex(headerMap, ["review approval", "review_approval"]);
+  if (reviewApprovalIdx >= 0) {
+    sheet.getRange(rowNumber, reviewApprovalIdx + 1).setValue("Approved");
   }
   
   // Update status to Pending (now in Step 5 approval)
