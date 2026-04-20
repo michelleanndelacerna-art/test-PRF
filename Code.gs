@@ -812,30 +812,29 @@ function getApprovalRemarkFieldNames(stepLabel, stepIndex) {
 function getApprovalColumnFieldNames(stepLabel, stepIndex) {
   // Maps approval role to approval column names
   const norm = (stepLabel || "").toLowerCase().trim();
-  
+  const config = { status: [], approver: [] };
+
   if (norm.indexOf("plant") !== -1) {
-    return ["plant head approval", "plant_head_approval"];
-  }
-  if (norm.indexOf("bu") !== -1 || norm.indexOf("business") !== -1) {
-    return ["bu head approval", "bu_head_approval"];
-  }
-  if (norm.indexOf("legal") !== -1) {
-    return ["legal approval", "legal_approval"];
-  }
-  if (norm.indexOf("corporate") !== -1 && norm.indexOf("hrod") !== -1) {
-    return ["corporate hrod approval", "corporate_hrod_approval"];
-  }
-  if (norm.indexOf("type") !== -1 || norm === "type selection") {
-    return ["type selection approval", "type_selection_approval"];
-  }
-  if (norm.indexOf("review") !== -1) {
-    return ["review approval", "review_approval"];
-  }
-  if (norm.indexOf("recruitment") !== -1) {
-    return ["recruitment notification", "recruitment_notification"];
+    config.status = ["plant head approval", "plant_head_approval"];
+    config.approver = ["plant head approver", "plant_head_approver"];
+  } else if (norm.indexOf("bu") !== -1 || norm.indexOf("business") !== -1) {
+    config.status = ["bu head approval", "bu_head_approval"];
+    config.approver = ["bu head approver", "bu_head_approver"];
+  } else if (norm.indexOf("legal") !== -1) {
+    config.status = ["legal approval", "legal_approval"];
+    config.approver = ["legal approver", "legal_approver"];
+  } else if (norm.indexOf("corporate") !== -1 && norm.indexOf("hrod") !== -1) {
+    config.status = ["corporate hrod approval", "corporate_hrod_approval"];
+    config.approver = ["corporate hrod approver", "corporate_hrod_approver"];
+  } else if (norm.indexOf("type") !== -1 || norm === "type selection") {
+    config.status = ["type selection approval", "type_selection_approval"];
+  } else if (norm.indexOf("review") !== -1) {
+    config.status = ["review approval", "review_approval"];
+  } else if (norm.indexOf("recruitment") !== -1) {
+    config.status = ["recruitment notification", "recruitment_notification"];
   }
   
-  return [];
+  return config;
 }
 
 function getApprovalRemarkFromRow(row, map, stepLabel, stepIndex) {
@@ -1309,7 +1308,7 @@ function approveRequest(requestID, action, comments) {
   
   const manpowerData = request.manpowerData || {};
   const isExceptional = manpowerData.isExceptional === true || manpowerData.isExceptional === "true";
-  const currentIndex = approvalChain.indexOf(request.currentApprover);
+  const currentIndex = findApprovalStepIndex(approvalSteps, request.currentApprover);
   const currentLevel = currentIndex >= 0 && approvalSteps[currentIndex]
     ? approvalSteps[currentIndex].label
     : request.currentApprover;
@@ -1326,10 +1325,20 @@ function approveRequest(requestID, action, comments) {
   if (action === "Approve") {
     let nextIndex = currentIndex < 0 ? 0 : currentIndex;
 
-    while (nextIndex < approvalChain.length && approvalChain[nextIndex] === request.currentApprover) {
-      approvedLevels.push(approvalSteps[nextIndex] ? approvalSteps[nextIndex].label : approvalChain[nextIndex]);
-      remarkIndexesToUpdate.push(nextIndex);
-      nextIndex++;
+    // Process current level and any identical subsequent levels in the chain
+    if (nextIndex < approvalChain.length) {
+      const currentApproverValue = approvalChain[nextIndex];
+      const currentLabelValue = approvalSteps[nextIndex] ? approvalSteps[nextIndex].label : "";
+
+      do {
+        approvedLevels.push(approvalSteps[nextIndex] ? approvalSteps[nextIndex].label : approvalChain[nextIndex]);
+        remarkIndexesToUpdate.push(nextIndex);
+        nextIndex++;
+      } while (nextIndex < approvalChain.length &&
+               (approvalChain[nextIndex] === currentApproverValue ||
+                (approvalSteps[nextIndex] && approvalSteps[nextIndex].label === currentLabelValue) ||
+                approvalChain[nextIndex] === request.currentApprover ||
+                (approvalSteps[nextIndex] && approvalSteps[nextIndex].label === request.currentApprover)));
     }
 
     actedLevels = approvedLevels.length > 0 ? approvedLevels.slice() : [currentLevel];
@@ -1361,8 +1370,10 @@ function approveRequest(requestID, action, comments) {
   }
   
   const statusIdx = getRequestColumnIndex(headerMap, ["status"]);
-  const nextApproverIdx = getRequestColumnIndex(headerMap, ["next approver", "next_approver", "current approver", "current_approver", "approver level", "approver_level", "approverlevel"]);
-  const approvalColumnIdx = getRequestColumnIndex(headerMap, getApprovalColumnFieldNames(currentLevel, currentIndex));
+  const nextApproverColumnNames = ["next approver", "next_approver", "current approver", "current_approver", "approver level", "approver_level", "approverlevel"];
+  const approvalConfig = getApprovalColumnFieldNames(currentLevel, currentIndex);
+  const approvalColumnIdx = getRequestColumnIndex(headerMap, approvalConfig.status);
+  const approverEmailColumnIdx = getRequestColumnIndex(headerMap, approvalConfig.approver);
 
   if (statusIdx >= 0) {
     sheet.getRange(rowNumber, statusIdx + 1).setValue(newStatus);
@@ -1370,9 +1381,14 @@ function approveRequest(requestID, action, comments) {
   if (generalNotesIdx >= 0) {
     sheet.getRange(rowNumber, generalNotesIdx + 1).setValue(remarkText);
   }
-  if (nextApproverIdx >= 0) {
-    sheet.getRange(rowNumber, nextApproverIdx + 1).setValue(nextApprover);
-  }
+
+  // Update Next Approver - update multiple potential columns
+  nextApproverColumnNames.forEach(colName => {
+    const idx = headerMap[colName.toLowerCase()];
+    if (idx !== undefined) {
+      sheet.getRange(rowNumber, idx + 1).setValue(nextApprover);
+    }
+  });
   
   // Update the approval column for the current step with the decided action
   if (approvalColumnIdx >= 0) {
@@ -1384,6 +1400,11 @@ function approveRequest(requestID, action, comments) {
           ? "On Hold" 
           : action;
     sheet.getRange(rowNumber, approvalColumnIdx + 1).setValue(approvalDecision);
+  }
+
+  // Update the approver email column
+  if (approverEmailColumnIdx >= 0 && action === "Approve") {
+    sheet.getRange(rowNumber, approverEmailColumnIdx + 1).setValue(user.email);
   }
 
   remarkIndexesToUpdate.forEach(stepIndex => {
