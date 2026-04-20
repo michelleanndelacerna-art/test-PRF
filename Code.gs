@@ -651,6 +651,8 @@ function getCompanyStructure() {
     plantHead: header.indexOf('plant head'),
     buHead: header.indexOf('bu head'),
     managingDirector: header.indexOf('managing director'),
+    legalTeam: header.indexOf('legal team'),
+    corporateHrod: header.indexOf('corporate hrod'),
     category: header.indexOf('category')
   };
 
@@ -673,6 +675,8 @@ function getCompanyStructure() {
     const plantHead = (data[i][idx.plantHead] || '').toString().trim();
     const buHead = (data[i][idx.buHead] || '').toString().trim();
     const managingDirector = (data[i][idx.managingDirector] || '').toString().trim();
+    const legalTeam = (data[i][idx.legalTeam] || '').toString().trim();
+    const corporateHrod = (data[i][idx.corporateHrod] || '').toString().trim();
     const category = (data[i][idx.category] || '').toString().trim();
 
     if (division) {
@@ -687,6 +691,8 @@ function getCompanyStructure() {
         plantHead: plantHead,
         buHead: buHead,
         managingDirector: managingDirector,
+        legalTeam: legalTeam,
+        corporateHrod: corporateHrod,
         category: category
       };
 
@@ -772,7 +778,7 @@ function getApprovalStepsForData(requestData) {
   }
 
   const route = requestData.gap <= 0
-    ? ["Plant Head", "BU Head", "Legal", "Corporate HROD"]
+    ? ["Plant Head", "BU Head", "Legal Team", "Corporate HROD"]
     : getApprovalRoute(getNormalizedRequestType(requestData), requestData.category);
 
   return route.map(label => ({ label: label, approver: label }));
@@ -1265,15 +1271,15 @@ function getRequestByID(requestID) {
  */
 function getApprovalRoute(requestType, category) {
   if (requestType === "Replacement") {
-    return ["Plant Head", "Legal", "Corporate HROD"];
+    return ["Plant Head", "Legal Team", "Corporate HROD"];
   } else if (requestType === "Seasonal") {
     return category === "Production" 
-      ? ["Plant Head", "Manufacturing Director", "BU Head", "Legal", "Corporate HROD"]
-      : ["Plant Head", "BU Head", "Legal", "Corporate HROD"];
+      ? ["Plant Head", "Manufacturing Director", "BU Head", "Legal Team", "Corporate HROD"]
+      : ["Plant Head", "BU Head", "Legal Team", "Corporate HROD"];
   } else if (requestType === "Regular") {
     return category === "Production"
-      ? ["Plant Head", "Manufacturing Director", "BU Head", "Legal", "Corporate HROD"]
-      : ["Plant Head", "BU Head", "Legal", "Corporate HROD"];
+      ? ["Plant Head", "Manufacturing Director", "BU Head", "Legal Team", "Corporate HROD"]
+      : ["Plant Head", "BU Head", "Legal Team", "Corporate HROD"];
   }
   
   return ["Plant Head"];
@@ -1636,8 +1642,11 @@ function submitForStep5Approval(requestID) {
     return { success: false, message: "Step 5 approval chain not configured" };
   }
   
+  // Resolve Step 5 chain to email addresses if possible
+  const step5Emails = step5Chain.map(role => getApproverEmailByRole(role, request) || role);
+  const firstApprover = step5Emails[0];
+
   // Set first approver in Step 5 chain
-  const firstApprover = step5Chain[0];
   const nextApproverColumnNames = ["next approver", "next_approver", "current approver", "current_approver", "approver level", "approver_level", "approverlevel"];
   nextApproverColumnNames.forEach(colName => {
     const idx = headerMap[colName.toLowerCase()];
@@ -1661,27 +1670,27 @@ function submitForStep5Approval(requestID) {
   // Update approval chain
   const chainIdx = getRequestColumnIndex(headerMap, ["approval chain", "approval_chain"]);
   if (chainIdx >= 0) {
-    sheet.getRange(rowNumber, chainIdx + 1).setValue(step5Chain.join(","));
+    sheet.getRange(rowNumber, chainIdx + 1).setValue(step5Emails.join(","));
   }
   
   appendApprovalHistoryEntry(requestID, {
     action: "Submitted for Step 5 Approval",
     level: "Requestor",
     levels: ["Requestor"],
-    comment: "Request submitted for final approval chain: " + step5Chain.join(" → "),
+    comment: "Request submitted for final approval chain: " + step5Emails.join(" → "),
     timestamp: new Date().toISOString(),
     actorEmail: getCurrentUserEmail(),
     actorName: getUserRole().name,
     actorRole: "Requestor",
     statusAfter: "Pending",
     step: 5,
-    approvalChain: step5Chain
+    approvalChain: step5Emails
   });
   
-  // Send notification to first approver in Step 5 (Legal Team)
-  const firstApproverEmail = getApproverEmailByRole(firstApprover, request);
-  if (firstApproverEmail) {
-    sendStep5ApprovalNotification(request, firstApprover, firstApproverEmail);
+  // Send notification to first approver in Step 5
+  if (firstApprover) {
+    const approverLabel = step5Chain[0];
+    sendStep5ApprovalNotification(request, approverLabel, firstApprover);
   }
   
   return {
@@ -1689,7 +1698,7 @@ function submitForStep5Approval(requestID) {
     message: "Request submitted for Step 5 approval",
     requestID: requestID,
     newStatus: "Pending",
-    approvalChain: step5Chain,
+    approvalChain: step5Emails,
     nextApprover: firstApprover
   };
 }
@@ -1699,7 +1708,7 @@ function submitForStep5Approval(requestID) {
  * Note: Uses naming consistent with getApprovalRoute
  */
 function getStep5ApprovalChain() {
-  return ["Legal", "Corporate HROD"];
+  return ["Legal Team", "Corporate HROD"];
 }
 
 /**
@@ -1881,7 +1890,7 @@ function getApproverEmailFromMasterList(request, approverRole) {
     
     // Find column indices
     let divisionIdx = -1, groupIdx = -1, deptIdx = -1, sectionIdx = -1, lineIdx = -1;
-    let plantHeadIdx = -1, buHeadIdx = -1, managingDirectorIdx = -1;
+    let plantHeadIdx = -1, buHeadIdx = -1, managingDirectorIdx = -1, legalTeamIdx = -1, corpHrodIdx = -1;
     
     for (let j = 0; j < headers.length; j++) {
       const header = (headers[j] || "").toString().toLowerCase().trim();
@@ -1893,6 +1902,8 @@ function getApproverEmailFromMasterList(request, approverRole) {
       else if (header === "plant head") plantHeadIdx = j;
       else if (header === "bu head") buHeadIdx = j;
       else if (header === "managing director") managingDirectorIdx = j;
+      else if (header === "legal team") legalTeamIdx = j;
+      else if (header === "corporate hrod") corpHrodIdx = j;
     }
     
     if (plantHeadIdx < 0 || buHeadIdx < 0) {
@@ -1930,11 +1941,11 @@ function getApproverEmailFromMasterList(request, approverRole) {
           // Managing Director
           approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
         } else if (normalizedRole.indexOf("corporate") !== -1 || normalizedRole.indexOf("hrod") !== -1) {
-          // Corporate HROD - map to Managing Director column
-          approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
+          // Corporate HROD
+          approverEmail = corpHrodIdx >= 0 ? (data[i][corpHrodIdx] || "").toString().trim() : (data[i][managingDirectorIdx] || "").toString().trim();
         } else if (normalizedRole.indexOf("legal") !== -1) {
-          // Legal - for now, use Managing Director or fall back to Users sheet
-          approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
+          // Legal Team
+          approverEmail = legalTeamIdx >= 0 ? (data[i][legalTeamIdx] || "").toString().trim() : (data[i][managingDirectorIdx] || "").toString().trim();
         }
         
         if (approverEmail) {
@@ -1962,6 +1973,7 @@ function getApproverEmailByRole(roleLabel, request = null) {
   // Hardcoded fallback for system roles (can be changed in Users sheet later)
   const systemRoleEmails = {
     "legal": "corporate.training@uratex.com.ph",
+    "legal team": "corporate.training@uratex.com.ph",
     "corporate hrod": "michelleann.delacerna@uratex.com.ph",
     "recruitment": "corporate.training@uratex.com.ph" // can be updated
   };
