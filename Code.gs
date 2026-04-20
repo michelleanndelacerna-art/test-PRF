@@ -515,7 +515,7 @@ function buildRequestRecord(row, headerMap, rowNumber) {
   };
 
   const approvalHistory = getApprovalHistory(requestID);
-  const approvalSteps = getApprovalStepsForRequest(request);
+  const approvalSteps = getApprovalStepsForRequest(request, true); // Include Step 5 roles
   const approvalTracker = buildApprovalTrackerData(request, approvalSteps, approvalHistory);
 
   request.approvalHistory = approvalHistory;
@@ -720,11 +720,14 @@ function getOrgApprovalSteps(division, group, department, section, unit, line) {
   const structure = getCompanyStructure();
 
   function buildSteps(row) {
-    return [
+    const steps = [
       { label: "Plant Head", approver: (row.plantHead || "").toString().trim() },
       { label: "BU Head", approver: (row.buHead || "").toString().trim() },
-      { label: "Managing Director", approver: (row.managingDirector || "").toString().trim() }
-    ].filter(step => step.approver);
+      { label: "Managing Director", approver: (row.managingDirector || "").toString().trim() },
+      { label: "Legal Team", approver: (row.legalTeam || "").toString().trim() },
+      { label: "Corporate HROD", approver: (row.corporateHrod || "").toString().trim() }
+    ];
+    return steps.filter(step => step.approver);
   }
 
   if (unit && line && structure[division] &&
@@ -763,7 +766,7 @@ function getNormalizedRequestType(requestData) {
   return requestData.requestType;
 }
 
-function getApprovalStepsForData(requestData) {
+function getApprovalStepsForData(requestData, includeFinalSteps = false) {
   const orgSteps = getOrgApprovalSteps(
     requestData.division,
     requestData.group,
@@ -773,18 +776,43 @@ function getApprovalStepsForData(requestData) {
     requestData.line
   );
 
+  let route = [];
   if (orgSteps.length) {
-    return orgSteps;
+    route = orgSteps.map(step => step.label);
+  } else {
+    route = requestData.gap <= 0
+      ? ["Plant Head", "BU Head"]
+      : getApprovalRoute(getNormalizedRequestType(requestData), requestData.category);
   }
 
-  const route = requestData.gap <= 0
-    ? ["Plant Head", "BU Head", "Legal Team", "Corporate HROD"]
-    : getApprovalRoute(getNormalizedRequestType(requestData), requestData.category);
+  // If includeFinalSteps is true, always append Legal and Corporate HROD if they aren't there
+  // This is primarily for the frontend workflow tracker to show all 6 steps
+  if (includeFinalSteps) {
+    if (route.indexOf("Legal Team") === -1 && route.indexOf("Legal") === -1) {
+      route.push("Legal Team");
+    }
+    if (route.indexOf("Corporate HROD") === -1) {
+      route.push("Corporate HROD");
+    }
+  }
 
-  return route.map(label => ({ label: label, approver: label }));
+  // Build temporary request object for lookups
+  const tempRequest = {
+    division: requestData.division,
+    group: requestData.group,
+    department: requestData.department,
+    section: requestData.section,
+    unit: requestData.unit,
+    line: requestData.line
+  };
+
+  return route.map(label => {
+    const email = getApproverEmailByRole(label, tempRequest);
+    return { label: label, approver: email || label };
+  });
 }
 
-function getApprovalStepsForRequest(request) {
+function getApprovalStepsForRequest(request, includeFinalSteps = false) {
   return getApprovalStepsForData({
     division: request.division,
     group: request.group,
@@ -796,7 +824,7 @@ function getApprovalStepsForRequest(request) {
     category: request.category,
     positions: request.positions,
     gap: request.gap
-  });
+  }, includeFinalSteps);
 }
 
 function getRequestColumnIndex(map, names) {
@@ -835,9 +863,9 @@ function getApprovalColumnFieldNames(stepLabel, stepIndex) {
     config.status = ["bu head approval", "bu_head_approval"];
     config.approver = ["bu head approver", "bu_head_approver"];
   } else if (norm.indexOf("legal") !== -1) {
-    config.status = ["legal approval", "legal_approval"];
-    config.approver = ["legal approver", "legal_approver"];
-  } else if (norm.indexOf("corporate") !== -1 && norm.indexOf("hrod") !== -1) {
+    config.status = ["legal approval", "legal_approval", "legal team approval"];
+    config.approver = ["legal approver", "legal_approver", "legal team approver"];
+  } else if (norm.indexOf("corporate") !== -1 && (norm.indexOf("hrod") !== -1 || norm.indexOf("hr") !== -1)) {
     config.status = ["corporate hrod approval", "corporate_hrod_approval"];
     config.approver = ["corporate hrod approver", "corporate_hrod_approver"];
   } else if (norm.indexOf("type") !== -1 || norm === "type selection") {
@@ -1303,7 +1331,7 @@ function approveRequest(requestID, action, comments) {
   }
   
   // If approval chain contains "Legal" or "Corporate HROD", we're in Step 5 - prioritize stored chain
-  const isInStep5 = request.approvalChain && (request.approvalChain.toLowerCase().indexOf("legal") !== -1);
+  const isInStep5 = request.approvalChain && (request.approvalChain.toLowerCase().indexOf("legal") !== -1 || request.approvalChain.toLowerCase().indexOf("corporate") !== -1);
   
   let approvalSteps = [];
   let approvalChain = [];
@@ -1311,7 +1339,12 @@ function approveRequest(requestID, action, comments) {
   if (isInStep5 && request.approvalChain) {
     // Step 5: Use the stored approval chain directly
     approvalChain = request.approvalChain.split(",").map(s => s.trim());
-    approvalSteps = approvalChain.map(label => ({ label: label, approver: label }));
+    approvalSteps = approvalChain.map(label => {
+      const email = getApproverEmailByRole(label, request);
+      return { label: label, approver: email || label };
+    });
+    // Ensure approvalChain holds the resolved approvers (emails) for index matching
+    approvalChain = approvalSteps.map(s => s.approver);
   } else {
     // Steps 1-2: Build approvalSteps from request data
     approvalSteps = getApprovalStepsForRequest(request);
@@ -1420,6 +1453,9 @@ function approveRequest(requestID, action, comments) {
   if (approverEmailColumnIdx >= 0 && action === "Approve") {
     sheet.getRange(rowNumber, approverEmailColumnIdx + 1).setValue(user.email);
   }
+
+  // Explicitly flush to ensure sheet is updated
+  SpreadsheetApp.flush();
 
   remarkIndexesToUpdate.forEach(stepIndex => {
     const stepLabel = approvalSteps[stepIndex] ? approvalSteps[stepIndex].label : "";
@@ -1672,6 +1708,9 @@ function submitForStep5Approval(requestID) {
   if (chainIdx >= 0) {
     sheet.getRange(rowNumber, chainIdx + 1).setValue(step5Emails.join(","));
   }
+
+  // Explicitly flush to ensure sheet is updated before returning
+  SpreadsheetApp.flush();
   
   appendApprovalHistoryEntry(requestID, {
     action: "Submitted for Step 5 Approval",
@@ -1902,8 +1941,8 @@ function getApproverEmailFromMasterList(request, approverRole) {
       else if (header === "plant head") plantHeadIdx = j;
       else if (header === "bu head") buHeadIdx = j;
       else if (header === "managing director") managingDirectorIdx = j;
-      else if (header === "legal team") legalTeamIdx = j;
-      else if (header === "corporate hrod") corpHrodIdx = j;
+      else if (header.indexOf("legal") !== -1) legalTeamIdx = j;
+      else if (header.indexOf("corporate") !== -1 && header.indexOf("hrod") !== -1) corpHrodIdx = j;
     }
     
     if (plantHeadIdx < 0 || buHeadIdx < 0) {
@@ -1942,14 +1981,33 @@ function getApproverEmailFromMasterList(request, approverRole) {
           approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
         } else if (normalizedRole.indexOf("corporate") !== -1 || normalizedRole.indexOf("hrod") !== -1) {
           // Corporate HROD
-          approverEmail = corpHrodIdx >= 0 ? (data[i][corpHrodIdx] || "").toString().trim() : (data[i][managingDirectorIdx] || "").toString().trim();
+          approverEmail = corpHrodIdx >= 0 ? (data[i][corpHrodIdx] || "").toString().trim() : "";
+          if (!approverEmail) approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
         } else if (normalizedRole.indexOf("legal") !== -1) {
           // Legal Team
-          approverEmail = legalTeamIdx >= 0 ? (data[i][legalTeamIdx] || "").toString().trim() : (data[i][managingDirectorIdx] || "").toString().trim();
+          approverEmail = legalTeamIdx >= 0 ? (data[i][legalTeamIdx] || "").toString().trim() : "";
+          if (!approverEmail) approverEmail = (data[i][managingDirectorIdx] || "").toString().trim();
         }
         
         if (approverEmail) {
           Logger.log("Found approver email from master list - Role: " + approverRole + ", Email: " + approverEmail + " (Div: " + division + ", Dept: " + dept + ")");
+          return approverEmail;
+        }
+      }
+    }
+
+    // Fallback: If still not found, search the whole sheet for the role in any row (for global roles like Legal/HROD)
+    if (normalizedRole.indexOf("legal") !== -1 || normalizedRole.indexOf("corporate") !== -1 || normalizedRole.indexOf("hrod") !== -1) {
+      for (let i = 1; i < data.length; i++) {
+        let approverEmail = "";
+        if (normalizedRole.indexOf("corporate") !== -1 || normalizedRole.indexOf("hrod") !== -1) {
+          approverEmail = corpHrodIdx >= 0 ? (data[i][corpHrodIdx] || "").toString().trim() : "";
+        } else if (normalizedRole.indexOf("legal") !== -1) {
+          approverEmail = legalTeamIdx >= 0 ? (data[i][legalTeamIdx] || "").toString().trim() : "";
+        }
+
+        if (approverEmail) {
+          Logger.log("Found approver email via global search in master list - Role: " + approverRole + ", Email: " + approverEmail);
           return approverEmail;
         }
       }
@@ -1964,10 +2022,27 @@ function getApproverEmailFromMasterList(request, approverRole) {
 }
 
 function getApproverEmailByRole(roleLabel, request = null) {
-  const trimmedRole = (roleLabel || "").toString().trim();
+  let trimmedRole = (roleLabel || "").toString().trim();
   if (trimmedRole.indexOf("@") !== -1) {
     return trimmedRole;
   }
+
+  // Map common role names to expected labels
+  const roleMapping = {
+    "legal": "Legal Team",
+    "legal_team": "Legal Team",
+    "corporate hrod": "Corporate HROD",
+    "corporate_hrod": "Corporate HROD",
+    "plant head": "Plant Head",
+    "bu head": "BU Head",
+    "managing director": "Managing Director"
+  };
+
+  const normalizedInput = trimmedRole.toLowerCase();
+  if (roleMapping[normalizedInput]) {
+    trimmedRole = roleMapping[normalizedInput];
+  }
+
   const normalizedLabel = trimmedRole.toLowerCase();
   
   // Hardcoded fallback for system roles (can be changed in Users sheet later)

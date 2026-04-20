@@ -2436,9 +2436,16 @@
             ];
             
             // Determine state of each step based on approval columns
-            const currentApprover = (request.currentApprover || '').toLowerCase().trim();
-            const nextApproverLower = currentApprover; // renamed from currentApprover to nextApprover in backend
-            
+            const currentApproverValue = (request.currentApprover || '').toLowerCase().trim();
+            const nextApproverLower = currentApproverValue; // renamed from currentApprover to nextApprover in backend
+
+            // Find current index in approval steps for better tracking
+            const approvalSteps = request.approvalSteps || [];
+            const currentIndex = approvalSteps.findIndex(s =>
+                (s.approver || '').toLowerCase().trim() === currentApproverValue ||
+                (s.label || '').toLowerCase().trim() === currentApproverValue
+            );
+
             // Get approval column values
             const plantHeadAppr = (request.plantHeadApproval || '').toLowerCase().trim();
             const buHeadAppr = (request.buHeadApproval || '').toLowerCase().trim();
@@ -2465,7 +2472,10 @@
                 let stateLabel = 'Pending';
                 
                 // Determine if we are in Step 5 or Step 6 based on status or approval columns
-                const isInStep5 = (nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1 || legalAppr || corpHrodAppr);
+                // or if the current index in the approval chain has reached those roles
+                const step5Roles = ['legal', 'corporate'];
+                const isInStep5 = (nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1 || legalAppr || corpHrodAppr ||
+                                  (currentIndex >= 0 && step5Roles.some(role => (approvalSteps[currentIndex].label || '').toLowerCase().indexOf(role) !== -1)));
                 const isInStep6 = (status === 'Sourcing In Progress' || recruitNotif);
 
                 // Check global status first
@@ -2497,10 +2507,10 @@
                                 state = apprState.state;
                                 stateLabel = apprState.label;
                             }
-                        } else if (nextApproverLower.indexOf('plant') !== -1) {
+                        } else if (currentIndex === 0 || nextApproverLower.indexOf('plant') !== -1) {
                             state = 'current';
                             stateLabel = 'Awaiting Plant Head';
-                        } else if (nextApproverLower.indexOf('bu') !== -1 || buHeadAppr || status === 'Approved' || isInStepsOrCompleted) {
+                        } else if (currentIndex > 0 || nextApproverLower.indexOf('bu') !== -1 || buHeadAppr || status === 'Approved' || isInStepsOrCompleted) {
                             state = 'completed';
                             stateLabel = 'Approved';
                         }
@@ -2509,19 +2519,22 @@
                 // Step 2: BU Head Approval
                 else if (step.phase === 2) {
                     if (!status.match(/disapproved|on hold/i)) {
+                        const step2Approver = approvalSteps[1];
+                        const isStep2Current = currentIndex === 1 || (step2Approver && (step2Approver.label.toLowerCase().indexOf('bu') !== -1 || step2Approver.label.toLowerCase().indexOf('manufacturing') !== -1) && nextApproverLower === (step2Approver.approver || '').toLowerCase().trim());
+
                         if (buHeadAppr) {
                             const apprState = getApprovalState(buHeadAppr);
                             if (apprState) {
                                 state = apprState.state;
                                 stateLabel = apprState.label;
                             }
-                        } else if (nextApproverLower.indexOf('bu') !== -1) {
+                        } else if (isStep2Current || nextApproverLower.indexOf('bu') !== -1) {
                             state = 'current';
                             stateLabel = 'Awaiting BU Head';
                         } else if (plantHeadAppr.indexOf('disapproved') !== -1 || plantHeadAppr.indexOf('hold') !== -1) {
                             state = 'pending';
                             stateLabel = 'Pending';
-                        } else if (plantHeadAppr && !buHeadAppr && status === 'Approved') {
+                        } else if ((plantHeadAppr && !buHeadAppr && status === 'Approved') || currentIndex > 1) {
                             state = 'completed';
                             stateLabel = 'Approved';
                         }
@@ -2560,18 +2573,20 @@
                 }
                 // Step 5: Final Approval (Legal & Corporate HROD)
                 else if (step.phase === 5) {
-                    const anyLegalDecision = legalAppr && getApprovalState(legalAppr);
-                    const anyCorporateDecision = corpHrodAppr && getApprovalState(corpHrodAppr);
-                    
                     if (legalAppr && !corpHrodAppr) {
                         const apprState = getApprovalState(legalAppr);
-                        state = apprState ? apprState.state : 'in_progress';
-                        stateLabel = apprState ? apprState.label : 'Legal Approved';
+                        if (apprState && (apprState.state === 'disapproved' || apprState.state === 'on_hold')) {
+                            state = apprState.state;
+                            stateLabel = apprState.label;
+                        } else {
+                            state = 'current';
+                            stateLabel = 'Legal Approved';
+                        }
                     } else if (corpHrodAppr) {
                         const apprState = getApprovalState(corpHrodAppr);
                         state = apprState ? apprState.state : 'completed';
                         stateLabel = apprState ? apprState.label : 'Complete';
-                    } else if (nextApproverLower.indexOf('legal') !== -1) {
+                    } else if (nextApproverLower.indexOf('legal') !== -1 || nextApproverLower.indexOf('corporate') !== -1) {
                         state = 'current';
                         stateLabel = 'In Progress';
                     } else if (status === 'Sourcing In Progress') {
