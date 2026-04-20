@@ -1,0 +1,4478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manpower Request Management System</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1e40af;
+            --primary-light: #dbeafe;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --info: #06b6d4;
+            --gray-50: #f9fafb;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-600: #4b5563;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --radius: 12px;
+            --radius-lg: 16px;
+            --shadow: 0 1px 3px rgba(0,0,0,0.1);
+            --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+            --shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            color: var(--gray-900);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Layout */
+        .app-container {
+            display: grid;
+            grid-template-columns: 280px 1fr;
+            min-height: 100vh;
+        }
+
+        .sidebar {
+            background: linear-gradient(180deg, #1e293b 0%, #334155 100%);
+            color: white;
+            padding: 2rem 1.5rem;
+            box-shadow: var(--shadow-lg);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary), var(--info));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        .user-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .user-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            font-size: 0.95rem;
+        }
+
+        .user-email {
+            font-size: 0.85rem;
+            opacity: 0.7;
+        }
+
+        .role-toggle {
+            width: 100%;
+            padding: 0.6rem 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            margin-top: 0.75rem;
+        }
+
+        .role-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(2px);
+        }
+
+        .nav-menu {
+            list-style: none;
+            margin-top: 2rem;
+        }
+
+        .nav-item {
+            margin-bottom: 0.75rem;
+        }
+
+        .nav-link {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.85rem 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            background: none;
+            width: 100%;
+            font-size: 0.95rem;
+        }
+
+        .nav-link:hover,
+        .nav-link.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            transform: translateX(4px);
+        }
+
+        .nav-link.active {
+            background: linear-gradient(90deg, var(--primary), var(--primary-light) alpha(0.2));
+            border-left: 3px solid var(--primary);
+            padding-left: calc(1rem - 3px);
+        }
+
+        .nav-icon {
+            font-size: 1.2rem;
+            min-width: 24px;
+        }
+
+        .nav-badge {
+            margin-left: auto;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 0.4rem;
+            border-radius: 999px;
+            background: var(--danger);
+            color: white;
+            font-size: 0.72rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .nav-badge.visible {
+            display: inline-flex;
+        }
+
+        /* Main Content */
+        .main-content {
+            padding: 2rem;
+            overflow-y: auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .page-subtitle {
+            color: var(--gray-500);
+            font-size: 0.95rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .tab-button {
+            padding: 1rem 1.5rem;
+            background: none;
+            border: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: var(--gray-500);
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.3s ease;
+        }
+
+        .tab-button:hover {
+            color: var(--primary);
+        }
+
+        .tab-button.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Cards */
+        .card {
+            background: white;
+            border-radius: var(--radius-lg);
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            border: 1px solid var(--gray-200);
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .info-card {
+            background: white;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.5rem;
+            box-shadow: var(--shadow-sm);
+            border: 1px solid var(--gray-200);
+            overflow: hidden;
+        }
+
+        .info-card .card-header {
+            background: var(--gray-50);
+            padding: 1rem 1.5rem;
+            margin: 0;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .info-card .card-header h4 {
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gray-800);
+        }
+
+        .info-card .card-body {
+            padding: 1.5rem;
+        }
+
+        .info-card.warning {
+            border-left: 4px solid var(--warning);
+        }
+
+        .info-card.warning .card-header {
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .file-list li {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+
+        .file-list li:last-child {
+            border-bottom: none;
+        }
+
+        .card-subtitle {
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--gray-700);
+            font-size: 0.95rem;
+        }
+
+        .form-label .required {
+            color: var(--danger);
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.85rem 1rem;
+            border: 1px solid var(--gray-300);
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .form-input:disabled,
+        .form-select:disabled {
+            background: var(--gray-100);
+            color: var(--gray-500);
+            cursor: not-allowed;
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.85rem 1.5rem;
+            border: none;
+            border-radius: var(--radius);
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--gray-200);
+            color: var(--gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray-300);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+
+        .btn-warning {
+            background: var(--warning);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn-sm {
+            padding: 0.5rem 0.85rem;
+            font-size: 0.8rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Status Badges */
+        .badge {
+            display: inline-block;
+            padding: 0.35rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1e40af;
+        }
+
+        .badge-approved {
+            background: rgba(16, 185, 129, 0.1);
+            color: #047857;
+        }
+
+        .badge-disapproved {
+            background: rgba(239, 68, 68, 0.1);
+            color: #b91c1c;
+        }
+
+        .badge-on-hold {
+            background: rgba(245, 158, 11, 0.1);
+            color: #92400e;
+        }
+
+        .badge-upcoming {
+            background: rgba(107, 114, 128, 0.12);
+            color: var(--gray-600);
+        }
+
+        .filter-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+
+        .filter-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1.15rem;
+            border-radius: 999px;
+            border: 1.5px solid var(--gray-300);
+            background: white;
+            color: var(--gray-700);
+            cursor: pointer;
+            font-size: 0.92rem;
+            font-weight: 600;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        }
+
+        .filter-pill:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(37, 99, 235, 0.15);
+        }
+
+        .filter-pill.active {
+            background: linear-gradient(135deg, var(--primary) 0%, #1e40af 100%);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+        }
+
+        .filter-pill.active:hover {
+            box-shadow: 0 10px 24px rgba(37, 99, 235, 0.3);
+        }
+
+        .filter-count {
+            min-width: 26px;
+            height: 26px;
+            padding: 0 0.5rem;
+            border-radius: 999px;
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.12) 0%, rgba(15, 23, 42, 0.08) 100%);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--gray-700);
+            border: 1px solid rgba(15, 23, 42, 0.08);
+        }
+
+        .filter-pill.active .filter-count {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-weight: 800;
+        }
+
+        /* Steppers */
+        .stepper {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3rem;
+            position: relative;
+        }
+
+        .stepper::before {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--gray-200);
+            z-index: 1;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            z-index: 2;
+            position: relative;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: white;
+            border: 2px solid var(--gray-300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: var(--gray-500);
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .step.active .step-circle {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 0 8px rgba(37, 99, 235, 0.1);
+        }
+
+        .step.completed .step-circle {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .step-label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            text-align: center;
+            color: var(--gray-600);
+        }
+
+        .step.active .step-label {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* Dashboard Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--primary);
+            box-shadow: var(--shadow);
+        }
+
+        .stat-label {
+            color: var(--gray-500);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .stat-subtext {
+            color: var(--gray-500);
+            font-size: 0.8rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Tables */
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .table th {
+            background: var(--gray-50);
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--gray-200);
+            color: var(--gray-700);
+            font-size: 0.85rem;
+        }
+
+        .table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .table tbody tr:hover {
+            background: var(--gray-50);
+        }
+
+        /* Modals */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 600px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        .modal-header {
+            padding: 2rem;
+            border-bottom: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray-500);
+        }
+
+        .modal-body {
+            padding: 2rem;
+        }
+
+        .modal-footer {
+            padding: 1.5rem 2rem;
+            border-top: 1px solid var(--gray-200);
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+        }
+
+        .modal-footer-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            width: 100%;
+        }
+
+        /* Alerts */
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            color: #047857;
+            border-left: 4px solid var(--success);
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            color: #b91c1c;
+            border-left: 4px solid var(--danger);
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            color: #92400e;
+            border-left: 4px solid var(--warning);
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            color: #1e40af;
+            border-left: 4px solid var(--primary);
+        }
+
+        /* Request List */
+        .request-item {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius-lg);
+            border-left: 4px solid var(--gray-200);
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: grid;
+            grid-template-columns: 1fr auto;
+            gap: 2rem;
+        }
+
+        .request-item:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateX(4px);
+        }
+
+        .request-item.pending {
+            border-left-color: var(--primary);
+        }
+
+        .request-item.approved {
+            border-left-color: var(--success);
+        }
+
+        .request-item.disapproved {
+            border-left-color: var(--danger);
+        }
+
+        .request-item.on-hold {
+            border-left-color: var(--warning);
+        }
+
+        .request-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .request-id {
+            font-weight: 700;
+            color: var(--primary);
+            font-size: 1rem;
+        }
+
+        .request-meta {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.85rem;
+            color: var(--gray-500);
+            flex-wrap: wrap;
+        }
+
+        .request-meta-item {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .request-actions {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .status-overview {
+            background: linear-gradient(135deg, #ffffff 0%, #f9fafb 100%);
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--gray-200);
+            box-shadow: var(--shadow-md);
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .status-banner {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 1rem;
+            padding: 1.25rem 1.5rem;
+            border-radius: var(--radius-lg);
+            margin-bottom: 1.25rem;
+            border: 2px solid transparent;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .status-banner.pending {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(37, 99, 235, 0.08) 100%);
+            color: #1e40af;
+            border-color: rgba(59, 130, 246, 0.2);
+        }
+
+        .status-banner.approved {
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(5, 150, 105, 0.08) 100%);
+            color: #047857;
+            border-color: rgba(16, 185, 129, 0.2);
+        }
+
+        .status-banner.disapproved {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(220, 38, 38, 0.08) 100%);
+            color: #b91c1c;
+            border-color: rgba(239, 68, 68, 0.2);
+        }
+
+        .status-banner.on-hold {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.12) 0%, rgba(217, 119, 6, 0.08) 100%);
+            color: #b45309;
+            border-color: rgba(245, 158, 11, 0.25);
+        }
+
+        .status-banner h3 {
+            margin-bottom: 0.35rem;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+
+        .status-banner p {
+            margin: 0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            opacity: 0.85;
+        }
+
+        .status-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+        }
+
+        .status-summary-card {
+            padding: 1.15rem;
+            border-radius: var(--radius);
+            background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+            border: 1.5px solid var(--gray-200);
+            transition: all 0.2s ease;
+        }
+
+        .status-summary-card:hover {
+            border-color: var(--primary);
+            box-shadow: 0 2px 6px rgba(37, 99, 235, 0.1);
+        }
+
+        .status-summary-label {
+            display: block;
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.6rem;
+            font-weight: 600;
+        }
+
+        .status-summary-value {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--gray-900);
+            word-break: break-word;
+            line-height: 1.4;
+        }
+
+        .tracker-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .tracker-step {
+            display: grid;
+            grid-template-columns: 32px 1fr;
+            gap: 1rem;
+            padding: 0.75rem;
+            border-radius: var(--radius);
+            background: var(--gray-50);
+            transition: all 0.2s ease;
+        }
+
+        .tracker-step.current {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%);
+            border: 1.5px solid rgba(59, 130, 246, 0.2);
+        }
+
+        .tracker-step.completed {
+            background: rgba(16, 185, 129, 0.06);
+        }
+
+        .tracker-step.blocked {
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.08) 0%, rgba(220, 38, 38, 0.04) 100%);
+        }
+
+        .tracker-step.held {
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.08) 0%, rgba(217, 119, 6, 0.04) 100%);
+        }
+
+        .tracker-marker {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            padding-top: 0.15rem;
+        }
+
+        .tracker-dot {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            border: 3px solid var(--gray-300);
+            background: white;
+            z-index: 1;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+        }
+
+        .tracker-line {
+            position: absolute;
+            top: 20px;
+            bottom: -20px;
+            width: 2px;
+            background: var(--gray-200);
+        }
+
+        .tracker-content {
+            padding: 0.25rem 0;
+        }
+
+        .tracker-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.35rem;
+        }
+
+        .tracker-header-row strong {
+            font-size: 0.95rem;
+            color: var(--gray-900);
+        }
+
+        .tracker-meta {
+            font-size: 0.84rem;
+            color: var(--gray-600);
+            margin-bottom: 0.35rem;
+        }
+
+        .tracker-note {
+            margin-top: 0.6rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: white;
+            border: 1px solid var(--gray-200);
+            color: var(--gray-700);
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+
+        .tracker-next-steps {
+            margin-top: 0.8rem;
+            padding: 0.8rem;
+            border-radius: 8px;
+            background: rgba(37, 99, 235, 0.06);
+            border-left: 3px solid var(--primary);
+            color: var(--gray-700);
+            font-size: 0.88rem;
+        }
+
+        .tracker-next-steps strong {
+            color: var(--primary);
+            font-weight: 600;
+        }
+
+        .tracker-step.completed .tracker-dot {
+            background: var(--success);
+            border-color: var(--success);
+        }
+
+        .tracker-step.current .tracker-dot {
+            background: var(--primary);
+            border-color: var(--primary);
+            animation: pulse-primary 2s infinite;
+        }
+
+        .tracker-step.held .tracker-dot {
+            background: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .tracker-step.blocked .tracker-dot {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
+
+        @keyframes pulse-primary {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 0 4px rgba(37, 99, 235, 0);
+            }
+        }
+
+        .remarks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 1.2rem;
+        }
+
+        .remark-card {
+            padding: 1.2rem;
+            border-radius: var(--radius-lg);
+            border: 2px solid var(--gray-200);
+            background: white;
+            transition: all 0.2s ease;
+            box-shadow: var(--shadow);
+        }
+
+        .remark-card:hover {
+            box-shadow: var(--shadow-md);
+            transform: translateY(-2px);
+        }
+
+        .remark-card.completed {
+            border-left: 5px solid var(--success);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, white 100%);
+        }
+
+        .remark-card.current {
+            border-left: 5px solid var(--primary);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.06) 0%, white 100%);
+        }
+
+        .remark-card.held {
+            border-left: 5px solid var(--warning);
+            background: linear-gradient(135deg, rgba(245, 158, 11, 0.06) 0%, white 100%);
+        }
+
+        .remark-card.blocked {
+            border-left: 5px solid var(--danger);
+            background: linear-gradient(135deg, rgba(239, 68, 68, 0.06) 0%, white 100%);
+        }
+
+        .remark-card.upcoming {
+            border-left: 5px solid var(--gray-300);
+            opacity: 0.8;
+        }
+
+        .remark-card-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 0.75rem;
+            margin-bottom: 0.85rem;
+            padding-bottom: 0.85rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .remark-card-title {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--gray-900);
+        }
+
+        .remark-card-meta {
+            font-size: 0.8rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+        }
+
+        .remark-card-body {
+            color: var(--gray-800);
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-weight: 500;
+        }
+
+        /* Loading & Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--gray-500);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+
+        .loader {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .app-container {
+                grid-template-columns: 1fr;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                width: 280px;
+                height: 100vh;
+                z-index: 999;
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .page-title {
+                font-size: 1.5rem;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+
+            .header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+
+            .tab-button {
+                padding: 0.75rem 1rem;
+                font-size: 0.85rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .modal-content {
+                width: 95%;
+            }
+
+            .request-item {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .filter-pills {
+                gap: 0.5rem;
+            }
+
+            .filter-pill {
+                width: 100%;
+                justify-content: space-between;
+            }
+
+            .status-banner,
+            .tracker-header-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .status-overview {
+                padding: 1.5rem;
+            }
+
+            .status-summary-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .tracker-steps {
+                gap: 0.75rem;
+            }
+
+            .tracker-step {
+                grid-template-columns: 24px 1fr;
+                gap: 0.75rem;
+                padding: 0.5rem;
+            }
+
+            .remarks-grid {
+                grid-template-columns: 1fr;
+                gap: 1rem;
+            }
+
+            .remark-card {
+                padding: 1rem;
+            }
+
+            .tracker-next-steps {
+                margin-top: 1rem;
+                font-size: 0.85rem;
+            }
+        }
+
+        /* Utility */
+        .hidden {
+            display: none !important;
+        }
+
+        .mt-1 { margin-top: 0.5rem; }
+        .mt-2 { margin-top: 1rem; }
+        .mt-3 { margin-top: 1.5rem; }
+        .mb-1 { margin-bottom: 0.5rem; }
+        .mb-2 { margin-bottom: 1rem; }
+        .mb-3 { margin-bottom: 1.5rem; }
+        .text-center { text-align: center; }
+        .text-muted { color: var(--gray-500); }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- SIDEBAR -->
+        <aside class="sidebar">
+            <div class="logo">
+                <div class="logo-icon">👥</div>
+                <span>MR System</span>
+            </div>
+
+            <div class="user-card">
+                <div class="user-name" id="userName">Loading...</div>
+                <div class="user-email" id="userEmail"></div>
+                <div id="currentRole" class="text-muted mt-1" style="font-size: 0.8rem;">Role: Requestor</div>
+                <button class="role-toggle" id="roleToggle" onclick="switchRole()">Switch Role</button>
+            </div>
+
+            <nav>
+                <ul class="nav-menu">
+                    <li class="nav-item">
+                        <button class="nav-link active" data-tab="dashboard" onclick="switchTab('dashboard', event)">
+                            <span class="nav-icon">📊</span>
+                            <span>Dashboard</span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" data-tab="requests" onclick="switchTab('requests', event)">
+                            <span class="nav-icon">📝</span>
+                            <span>My Requests</span>
+                            <span class="nav-badge" id="requestsBadge"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item" id="approvalNav" style="display: none;">
+                        <button class="nav-link" data-tab="approvals" onclick="switchTab('approvals', event)">
+                            <span class="nav-icon">✅</span>
+                            <span>Approvals</span>
+                            <span class="nav-badge" id="approvalsBadge"></span>
+                        </button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link" onclick="switchTab('create')">
+                            <span class="nav-icon">➕</span>
+                            <span>Create Request</span>
+                        </button>
+                    </li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- MAIN CONTENT -->
+        <main class="main-content">
+            <!-- DASHBOARD TAB -->
+            <div id="dashboardTab" class="tab-content active">
+                <div class="header">
+                    <div>
+                        <h1 class="page-title">Dashboard</h1>
+                        <p class="page-subtitle">Overview of your manpower requests and approvals</p>
+                    </div>
+                </div>
+
+                <div class="stats-grid" id="statsContainer">
+                    <div class="stat-card">
+                        <div class="stat-label">Total Requests</div>
+                        <div class="stat-value" id="statTotal">0</div>
+                        <div class="stat-subtext">All time</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Pending</div>
+                        <div class="stat-value" id="statPending">0</div>
+                        <div class="stat-subtext">Awaiting approval</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Approved</div>
+                        <div class="stat-value" id="statApproved">0</div>
+                        <div class="stat-subtext">Approved requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">Disapproved</div>
+                        <div class="stat-value" id="statDisapproved">0</div>
+                        <div class="stat-subtext">Disapproved requests</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">On Hold</div>
+                        <div class="stat-value" id="statOnHold">0</div>
+                        <div class="stat-subtext">Pending review</div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <div>
+                            <div class="card-title">Recent Requests</div>
+                            <div class="card-subtitle">Your last 5 requests</div>
+                        </div>
+                    </div>
+                    <div id="recentRequestsContainer"></div>
+                </div>
+            </div>
+
+            <!-- MY REQUESTS TAB -->
+            <div id="requestsTab" class="tab-content">
+                <div class="header">
+                    <div>
+                        <h1 class="page-title">My Requests</h1>
+                        <p class="page-subtitle">Track all your manpower requests</p>
+                    </div>
+                </div>
+
+                <div id="myRequestsContainer"></div>
+            </div>
+
+            <!-- APPROVALS TAB -->
+            <div id="approvalsTab" class="tab-content">
+                <div class="header">
+                    <div>
+                        <h1 class="page-title">Approvals</h1>
+                        <p class="page-subtitle">Pending and reviewed requests assigned to you</p>
+                    </div>
+                </div>
+
+                <div id="approvalFilters" class="filter-pills"></div>
+                <div id="pendingApprovalsContainer"></div>
+            </div>
+
+            <!-- CREATE REQUEST TAB -->
+            <div id="createTab" class="tab-content">
+                <div class="header">
+                    <div>
+                        <h1 class="page-title">Create New Request</h1>
+                        <p class="page-subtitle">Submit a new manpower request</p>
+                    </div>
+                </div>
+
+                <!-- STEPPER -->
+                <div class="stepper">
+                    <div class="step active" data-step="1">
+                        <div class="step-circle">1</div>
+                        <div class="step-label">Basic Info</div>
+                    </div>
+                    <div class="step" data-step="2">
+                        <div class="step-circle">2</div>
+                        <div class="step-label">Manpower Gap</div>
+                    </div>
+                    <div class="step" data-step="3">
+                        <div class="step-circle">3</div>
+                        <div class="step-label">Request Type</div>
+                    </div>
+                    <div class="step" data-step="4">
+                        <div class="step-circle">4</div>
+                        <div class="step-label">Review & Submit</div>
+                    </div>
+                </div>
+
+                <!-- STEP 1: BASIC INFO -->
+                <div class="form-step active" data-step="1">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Step 1: Basic Information</div>
+                        </div>
+
+                        <div id="formAlerts"></div>
+
+                        <div class="form-group">
+                            <label class="form-label">Category <span class="required">*</span></label>
+                            <select class="form-select" id="categoryField" onchange="updateCategoryFields()">
+                                <option value="">-- Select Category --</option>
+                                <option value="Production">Production</option>
+                                <option value="Non-Production">Non-Production</option>
+                            </select>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Division <span class="required">*</span></label>
+                                <select class="form-select" id="divisionField" onchange="updateGroupOptions()">
+                                    <option value="">-- Select Division --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Group <span class="required">*</span></label>
+                                <select class="form-select" id="groupField" onchange="updateDepartmentOptions()">
+                                    <option value="">-- Select Group --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label">Department <span class="required">*</span></label>
+                                <select class="form-select" id="departmentField" onchange="updateSectionOptions()">
+                                    <option value="">-- Select Department --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Section <span class="required">*</span></label>
+                                <select class="form-select" id="sectionField" onchange="updateUnitOptions()">
+                                    <option value="">-- Select Section --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row" id="unitLineContainer" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label">Unit <span class="required" id="unitRequired">*</span></label>
+                                <select class="form-select" id="unitField" onchange="updateLineOptions()">
+                                    <option value="">-- Select Unit --</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Line <span class="required" id="lineRequired">*</span></label>
+                                <select class="form-select" id="lineField">
+                                    <option value="">-- Select Line --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-primary" onclick="nextStep(1)">Next Step →</button>
+                            <button class="btn btn-secondary" onclick="resetForm()">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 2: MANPOWER GAP -->
+                <div class="form-step" data-step="2" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Step 2: Manpower Gap Analysis</div>
+                        </div>
+
+                        <div class="stats-grid">
+                            <div class="stat-card">
+                                <div class="stat-label">Optimum HC</div>
+                                <div class="stat-value" id="optimumHC">--</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Actual HC</div>
+                                <div class="stat-value" id="actualHC">--</div>
+                            </div>
+                            <div class="stat-card">
+                                <div class="stat-label">Gap</div>
+                                <div class="stat-value" id="gapValue">--</div>
+                            </div>
+                            <div class="stat-card" id="requestDetailsCard" style="padding:0;background:transparent;box-shadow:none;border:none;">
+                                <!-- Request Details will be injected here -->
+                            </div>
+                        </div>
+
+                        <div id="gapAnalysisContainer"></div>
+
+                        <div id="exceptionalJustificationContainer"></div>
+
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" onclick="previousStep(2)">← Back</button>
+                            <button class="btn btn-primary" id="step2NextBtn" onclick="nextStep(2)">Next Step →</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 3: REQUEST TYPE -->
+                <div class="form-step" data-step="3" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Step 3: Request Type</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Request Type <span class="required">*</span></label>
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1rem; margin-top: 1rem;">
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="radio" name="requestType" value="Replacement" onchange="updateRequestTypeFields()">
+                                    <span>Replacement</span>
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                    <input type="radio" name="requestType" value="Additional" onchange="updateRequestTypeFields()">
+                                    <span>Additional Manpower</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Replacement Options -->
+                        <div id="replacementOptions" style="display: none;">
+                            <div class="form-group mt-3">
+                                <label class="form-label">Select Employee to Replace <span class="required">*</span></label>
+                                <select class="form-select" id="employeeField">
+                                    <option value="">-- Select Employee --</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Additional Manpower Options -->
+                        <div id="additionalOptions" style="display: none;">
+                            <div class="form-group mt-3">
+                                <label class="form-label">Type <span class="required">*</span></label>
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 1rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="additionalType" value="Seasonal" onchange="updateAdditionalFields()">
+                                        <span>Seasonal</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer;">
+                                        <input type="radio" name="additionalType" value="Regular" onchange="updateAdditionalFields()">
+                                        <span>Regular</span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label">Position <span class="required">*</span></label>
+                                    <input type="text" class="form-input" id="positionField" placeholder="e.g., Production Operator">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Headcount <span class="required">*</span></label>
+                                    <input type="number" class="form-input" id="headcountField" min="1" value="1">
+                                </div>
+                            </div>
+
+                            <div class="form-row" id="seasonalDatesContainer" style="display: none;">
+                                <div class="form-group">
+                                    <label class="form-label">Start Date <span class="required">*</span></label>
+                                    <input type="date" class="form-input" id="startDateField">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">End Date <span class="required">*</span></label>
+                                    <input type="date" class="form-input" id="endDateField">
+                                </div>
+                            </div>
+
+                            <div id="positionsTableContainer" style="display: none; margin-top: 2rem;">
+                                <div class="table-container">
+                                    <table class="table">
+                                        <thead>
+                                            <tr>
+                                                <th>Position</th>
+                                                <th>Headcount</th>
+                                                <th>Duration</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="positionsTable">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <button class="btn btn-secondary mt-3" onclick="addPosition()">+ Add Row</button>
+                            </div>
+                        </div>
+
+                        <div style="margin-top: 2rem;" id="requestTypeButtonsContainer">
+                            <div class="btn-group">
+                                <button class="btn btn-secondary" onclick="previousStep(3)">← Back</button>
+                                <button class="btn btn-primary" onclick="nextStep(3)">Next Step →</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- STEP 4: REVIEW & SUBMIT -->
+                <div class="form-step" data-step="4" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-title">Step 4: Review & Submit</div>
+                        </div>
+
+                        <div id="reviewSummary"></div>
+
+                        <button class="btn btn-secondary" onclick="previousStep(4)">← Back</button>
+                        <button class="btn btn-primary" id="finalSubmitBtn" onclick="submitRequest()">Submit Request</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- SUCCESS MODAL -->
+    <div class="modal" id="successModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Request Submitted Successfully!</h2>
+                <button class="modal-close" onclick="closeModal('successModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <p>Your manpower request has been submitted successfully.</p>
+                <p><strong>Request ID: <span id="successRequestID"></span></strong></p>
+                <p>You can track the status of your request in the "My Requests" section.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-primary" onclick="goToDashboard()">Go to Dashboard</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- APPROVAL MODAL -->
+    <div class="modal" id="approvalModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Review Request</h2>
+                <button class="modal-close" onclick="closeModal('approvalModal')">×</button>
+            </div>
+            <div class="modal-body">
+                <div id="approvalModalContent"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal('approvalModal')">Close</button>
+                <button class="btn btn-warning" id="approvalHoldBtn" onclick="submitApproval('Hold')">Hold</button>
+                <button class="btn btn-danger" id="approvalDisapproveBtn" onclick="submitApproval('Disapprove')">Disapprove</button>
+                <button class="btn btn-success" id="approvalApproveBtn" onclick="submitApproval('Approve')">Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- REQUEST DETAILS MODAL -->
+    <div class="modal" id="requestDetailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Request Details</h2>
+                <button class="modal-close" onclick="closeModal('requestDetailModal')">×</button>
+            </div>
+            <div class="modal-body" id="requestDetailModalContent"></div>
+            <div class="modal-footer" id="requestDetailModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('requestDetailModal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 3: SELECT REQUEST TYPE MODAL -->
+    <div class="modal" id="step3Modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Step 3: Select Request Type</h2>
+                <button class="modal-close" onclick="closeModal('step3Modal'); appState.currentStep3Request = null;">×</button>
+            </div>
+            <div class="modal-body" id="step3ModalContent"></div>
+            <div class="modal-footer" id="step3ModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('step3Modal'); appState.currentStep3Request = null;">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 4: REVIEW & SUBMIT MODAL -->
+    <div class="modal" id="step4Modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h2 class="modal-title">Step 4: Review & Submit for Final Approval</h2>
+                <button class="modal-close" onclick="closeModal('step4Modal')">×</button>
+            </div>
+            <div class="modal-body" id="step4ModalContent"></div>
+            <div class="modal-footer" id="step4ModalFooter">
+                <button class="btn btn-secondary" onclick="closeModal('step4Modal')">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOADING MODAL -->
+    <div class="modal" id="loadingModal">
+        <div class="modal-content" style="max-width: 400px; text-align: center;">
+            <div class="modal-body">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+                <p id="loadingModalMessage">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+        
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================================
+        // APPLICATION STATE
+        // ============================================================
+
+        let appState = {
+            user: null,
+            userRole: 'Requestor',
+            currentTab: 'dashboard',
+            divisions: {},
+            isSubmitting: false,
+            formData: {
+                category: '',
+                division: '',
+                group: '',
+                department: '',
+                section: '',
+                unit: '',
+                line: '',
+                requestType: '',
+                positions: [],
+                optimumHC: 0,
+                actualHC: 0,
+                gap: 0,
+                justification: '',
+                exceptionalJustification: '',
+                uploadedFiles: [],
+                isExceptional: false
+            },
+            currentApproval: null,
+            myRequests: [],
+            pendingApprovals: [],
+            approvalFilter: 'Pending'
+        };
+
+        // ============================================================
+        // INITIALIZATION
+        // ============================================================
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeApp();
+        });
+
+        function initializeApp() {
+            google.script.run.withSuccessHandler(onInitializeSuccess).getInitialData();
+        }
+
+        function onInitializeSuccess(data) {
+            appState.user = data.user;
+            appState.divisions = data.divisions;
+            appState.structure = data.divisions;
+
+            // Update UI
+            document.getElementById('userName').textContent = data.user.name;
+            document.getElementById('userEmail').textContent = data.user.email;
+            document.getElementById('currentRole').textContent = 'Role: ' + data.user.role;
+
+            if (data.user.role === 'Approver' || data.user.role === 'Admin') {
+                document.getElementById('approvalNav').style.display = 'block';
+            }
+
+            // Populate divisions
+            populateDivisions();
+
+            // Load dashboard
+            loadDashboard();
+
+            if (data.user.role === 'Approver' || data.user.role === 'Admin') {
+                loadPendingApprovals();
+            }
+        }
+
+        // ============================================================
+        // TAB NAVIGATION
+        // ============================================================
+
+        function switchTab(tabName, event) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Remove active class from nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName + 'Tab').classList.add('active');
+
+            // Mark selected nav link active
+            let navButton = null;
+            if (event && event.target) {
+                navButton = event.target.closest('.nav-link');
+            }
+            if (!navButton) {
+                navButton = document.querySelector(`.nav-link[data-tab="${tabName}"]`);
+            }
+            if (navButton) {
+                navButton.classList.add('active');
+            }
+
+            appState.currentTab = tabName;
+
+            // Load tab data
+            if (tabName === 'dashboard') {
+                loadDashboard();
+            } else if (tabName === 'requests') {
+                loadMyRequests();
+            } else if (tabName === 'approvals') {
+                loadPendingApprovals();
+            }
+        }
+
+        // ============================================================
+        // DASHBOARD
+        // ============================================================
+
+        function loadDashboard() {
+            google.script.run.withSuccessHandler(onDashboardLoaded).getDashboardStats();
+        }
+
+        function onDashboardLoaded(stats) {
+            document.getElementById('statTotal').textContent = stats.total;
+            document.getElementById('statPending').textContent = stats.pending;
+            document.getElementById('statApproved').textContent = stats.approved;
+            document.getElementById('statDisapproved').textContent = stats.disapproved;
+            document.getElementById('statOnHold').textContent = stats.onHold;
+
+            if (appState.myRequests.length > 0) {
+                onMyRequestsLoaded(appState.myRequests);
+            } else {
+                google.script.run.withSuccessHandler(onMyRequestsLoaded).getMyRequests();
+            }
+        }
+
+        // ============================================================
+        // MY REQUESTS
+        // ============================================================
+
+        function loadMyRequests(forceRefresh = false) {
+            if (!forceRefresh && appState.myRequests.length > 0) {
+                onMyRequestsLoaded(appState.myRequests);
+                return;
+            }
+
+            google.script.run.withSuccessHandler(onMyRequestsLoaded).getMyRequests();
+        }
+
+        function onMyRequestsLoaded(requests) {
+            appState.myRequests = requests || [];
+            const isRequestsTab = appState.currentTab === 'requests';
+            const container = isRequestsTab
+                ? document.getElementById('myRequestsContainer')
+                : document.getElementById('recentRequestsContainer');
+            if (!container) return;
+
+            if (requests.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">📋</div>
+                        <div class="empty-title">No Requests Yet</div>
+                        <p>You haven\'t created any manpower requests yet.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const requestsToRender = isRequestsTab ? requests : requests.slice(0, 5);
+            let html = '';
+
+            requestsToRender.forEach(req => {
+                const status = (req.status || 'Pending').toString();
+                // For "Approved" status, show a more descriptive label
+                let displayStatus = status;
+                if (status === 'Approved') {
+                    displayStatus = 'Pre-approved - Action Required';
+                } else if (status.indexOf('Step 3') !== -1) {
+                    displayStatus = 'Step 3: Select Type';
+                } else if (status.indexOf('Step 4') !== -1) {
+                    displayStatus = 'Step 4: Review';
+                } else if (status === 'Sourcing In Progress') {
+                    displayStatus = 'Sourcing In Progress';
+                }
+                let statusBadge = `<span class="badge badge-${status.toLowerCase().replace(' ', '-')}">${displayStatus}</span>`;
+                const createdDate = new Date(req.createdDate || Date.now());
+                const displayDate = isNaN(createdDate.getTime()) ? 'No date' : createdDate.toLocaleDateString();
+                const manpowerValues = getRequestManpowerValues(req);
+                html += `
+                    <div class="request-item ${status.toLowerCase().replace(' ', '-')}" onclick="openRequestDetails('${req.requestID}')" style="cursor: pointer;">
+                        <div class="request-info">
+                            <div class="request-id">${req.requestID}</div>
+                            <div class="request-meta">
+                                <div class="request-meta-item">
+                                    <span>📅</span>
+                                    <span>${displayDate}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>🏢</span>
+                                    <span>${req.department || '-'}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>📊</span>
+                                    <span>Optimum HC: ${formatDisplayValue(manpowerValues.optimumHC, '-')}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>👥</span>
+                                    <span>Actual HC: ${formatDisplayValue(manpowerValues.actualHC, '-')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="request-actions">
+                            ${statusBadge}
+                        </div>
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+            updateNavigationBadges();
+        }
+
+        // ============================================================
+        // PENDING APPROVALS
+        // ============================================================
+
+        function loadPendingApprovals(forceRefresh = false) {
+            if (!forceRefresh && appState.pendingApprovals.length > 0) {
+                onPendingApprovalsLoaded(appState.pendingApprovals);
+                return;
+            }
+
+            google.script.run.withSuccessHandler(onPendingApprovalsLoaded).getPendingApprovals();
+        }
+
+        function onPendingApprovalsLoaded(approvals) {
+            appState.pendingApprovals = approvals || [];
+            const counts = getApprovalCounts(appState.pendingApprovals);
+            if ((counts[appState.approvalFilter] || 0) === 0 && counts.All > 0) {
+                appState.approvalFilter = ['Pending', 'On Hold', 'Approved', 'Disapproved', 'All']
+                    .find(label => (counts[label] || 0) > 0) || 'All';
+            }
+            renderApprovalFilters(appState.pendingApprovals);
+            renderApprovalList();
+            updateNavigationBadges();
+        }
+
+        function normalizeStatus(status, fallback = 'Pending') {
+            const value = (status || fallback).toString().trim();
+            return value || fallback;
+        }
+
+        function getStatusClass(status, fallback = 'pending') {
+            return normalizeStatus(status, fallback).toLowerCase().replace(/\s+/g, '-');
+        }
+
+        function getApprovalCounts(items) {
+            const counts = {
+                All: (items || []).length,
+                Pending: 0,
+                Approved: 0,
+                Disapproved: 0,
+                'On Hold': 0
+            };
+
+            (items || []).forEach(item => {
+                const reviewState = normalizeStatus(item.reviewState || item.status, 'Pending');
+                if (counts[reviewState] !== undefined) {
+                    counts[reviewState] += 1;
+                }
+            });
+
+            return counts;
+        }
+
+        function renderApprovalFilters(items) {
+            const container = document.getElementById('approvalFilters');
+            if (!container) return;
+
+            const filterLabels = ['All', 'Pending', 'Approved', 'Disapproved', 'On Hold'];
+            const counts = getApprovalCounts(items);
+
+            container.innerHTML = filterLabels.map(label => `
+                <button class="filter-pill ${appState.approvalFilter === label ? 'active' : ''}" onclick="setApprovalFilter('${label}')">
+                    <span>${label}</span>
+                    <span class="filter-count">${counts[label] || 0}</span>
+                </button>
+            `).join('');
+        }
+
+        function setApprovalFilter(filter) {
+            appState.approvalFilter = filter;
+            renderApprovalFilters(appState.pendingApprovals);
+            renderApprovalList();
+        }
+
+        function getFilteredApprovals() {
+            if (appState.approvalFilter === 'All') {
+                return appState.pendingApprovals || [];
+            }
+
+            return (appState.pendingApprovals || []).filter(item => normalizeStatus(item.reviewState || item.status, 'Pending') === appState.approvalFilter);
+        }
+
+        function renderApprovalList() {
+            const container = document.getElementById('pendingApprovalsContainer');
+            if (!container) return;
+
+            if (!appState.pendingApprovals.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">✅</div>
+                        <div class="empty-title">No Approval Items</div>
+                        <p>No requests are currently assigned to you for review or history.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const approvals = getFilteredApprovals();
+            if (!approvals.length) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-icon">🗂️</div>
+                        <div class="empty-title">No ${appState.approvalFilter} Items</div>
+                        <p>There are no requests in this category right now.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = approvals.map(req => {
+                const manpowerValues = getRequestManpowerValues(req);
+                const reviewState = normalizeStatus(req.reviewState || req.status, 'Pending');
+                const reviewStateClass = getStatusClass(reviewState);
+                const matchedLevels = req.matchedLevels && req.matchedLevels.length
+                    ? req.matchedLevels.join(' / ')
+                    : (req.currentApprover || '-');
+                return `
+                    <div class="request-item ${reviewStateClass}">
+                        <div class="request-info">
+                            <div class="request-id">${req.requestID}</div>
+                            <div class="request-meta">
+                                <div class="request-meta-item">
+                                    <span>👤</span>
+                                    <span>${req.requestedBy || req.email || '-'}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>🏢</span>
+                                    <span>${req.department || '-'}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>🧭</span>
+                                    <span>${matchedLevels}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>📊</span>
+                                    <span>Optimum HC: ${formatDisplayValue(manpowerValues.optimumHC, '-')}</span>
+                                </div>
+                                <div class="request-meta-item">
+                                    <span>👥</span>
+                                    <span>Actual HC: ${formatDisplayValue(manpowerValues.actualHC, '-')}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="request-actions">
+                            <span class="badge badge-${reviewStateClass}">${reviewState === 'Approved' ? 'Pre-approved' : reviewState}</span>
+                            <button class="btn btn-primary" onclick="openApprovalModal('${req.requestID}')">${req.canAct ? 'Review' : 'View'}</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getCachedRequest(list, requestID) {
+            return (list || []).find(req => req.requestID === requestID) || null;
+        }
+
+        function getCurrentApprovalStepIndex(request) {
+            return (request.approvalSteps || []).findIndex(step => step.approver === request.currentApprover || step.label === request.currentApprover);
+        }
+
+        function getApprovalRemark(request, step, index) {
+            if ((step && step.label === 'Plant Head') || index === 0) return request.remarks1 || '';
+            if ((step && step.label === 'BU Head') || index === 1) return request.remarks2 || '';
+            if ((step && step.label === 'Managing Director') || index === 2) return request.remarks3 || '';
+            return '';
+        }
+
+        function getApprovalActionFromRemarkText(remark) {
+            const value = (remark || '').trim().toLowerCase();
+            if (value.startsWith('approved')) return 'Approved';
+            if (value.startsWith('disapproved')) return 'Disapproved';
+            if (value.startsWith('on hold')) return 'On Hold';
+            return '';
+        }
+
+        function getLatestRemark(request) {
+            return [request.remarks3, request.remarks2, request.remarks1, request.approverNotes]
+                .find(value => value && value.toString().trim()) || '';
+        }
+
+        function getApprovalStepState(request, step, index) {
+            const remark = getApprovalRemark(request, step, index);
+            const action = getApprovalActionFromRemarkText(remark);
+            const currentIndex = getCurrentApprovalStepIndex(request);
+            const status = normalizeStatus(request.status, 'Pending');
+
+            if (action === 'Approved' || status === 'Approved') return 'completed';
+            if (action === 'Disapproved') return 'blocked';
+            if (action === 'On Hold') return 'held';
+            if ((status === 'Pending' || status === 'On Hold') && currentIndex === index) {
+                return status === 'On Hold' ? 'held' : 'current';
+            }
+            if (currentIndex > index) return 'completed';
+            return 'upcoming';
+        }
+
+        function getTrackerBadgeClass(state) {
+            if (state === 'completed') return 'approved';
+            if (state === 'blocked') return 'disapproved';
+            if (state === 'held') return 'on-hold';
+            if (state === 'current') return 'pending';
+            return 'upcoming';
+        }
+
+        function getTrackerStateLabel(state) {
+            if (state === 'completed') return 'Approved';
+            if (state === 'blocked') return 'Disapproved';
+            if (state === 'held') return 'On Hold';
+            if (state === 'current') return 'Current';
+            return 'Waiting';
+        }
+
+        function getNextStepsInfo(request) {
+            const status = normalizeStatus(request.status, 'Pending');
+            const currentIndex = getCurrentApprovalStepIndex(request);
+            
+            if (status === 'Approved') {
+                return {
+                    displayed: true,
+                    text: '📋 <strong>Next Step:</strong> Click "Proceed to Step 3: Select Request Type" to continue. You will select whether this is a replacement or additional manpower request.'
+                };
+            }
+            
+            if (status.indexOf('Step 3') !== -1) {
+                return {
+                    displayed: true,
+                    text: '📝 <strong>Your Action Required:</strong> Complete Step 3 by selecting request type and details. This is in progress.'
+                };
+            }
+            
+            if (status.indexOf('Step 4') !== -1) {
+                return {
+                    displayed: true,
+                    text: '👀 <strong>Your Action Required:</strong> Review all details in Step 4 and submit for final approval.'
+                };
+            }
+            
+            if (status === 'Sourcing In Progress') {
+                return {
+                    displayed: true,
+                    text: '✅ <strong>Complete!</strong> Your request has been approved and the Recruitment Department is now sourcing for the positions.'
+                };
+            }
+            
+            if (status === 'Disapproved') {
+                return {
+                    displayed: true,
+                    text: '⛔ This request has been disapproved. No further approvals needed.'
+                };
+            }
+            
+            if (status === 'On Hold') {
+                return {
+                    displayed: true,
+                    text: '⏸️ This request is on hold. Waiting for clarification and re-submission.'
+                };
+            }
+            
+            // Status is Pending (in approval workflow)
+            if (currentIndex >= 0 && currentIndex + 1 < request.approvalSteps.length) {
+                const nextStep = request.approvalSteps[currentIndex + 1];
+                return {
+                    displayed: true,
+                    text: `➡️ <strong>Next:</strong> Awaiting review from <strong>${nextStep.label}</strong> (${nextStep.approver || 'N/A'})`
+                };
+            } else if (currentIndex >= 0 && currentIndex + 1 === request.approvalSteps.length) {
+                return {
+                    displayed: true,
+                    text: '✅ <strong>Final Step:</strong> Currently with the last approver. Completion is near.'
+                };
+            } else if (request.approvalSteps && request.approvalSteps.length > 0) {
+                return {
+                    displayed: true,
+                    text: `➡️ <strong>Next:</strong> Awaiting review from <strong>${request.approvalSteps[0].label}</strong>`
+                };
+            } else {
+                return {
+                    displayed: true,
+                    text: '↳ Awaiting next approval step.'
+                };
+            }
+        }
+
+        function getRequestStatusSummary(request) {
+            const status = normalizeStatus(request.status, 'Pending');
+            const latestRemark = getLatestRemark(request);
+
+            if (status === 'Approved') {
+                return {
+                    tone: 'approved',
+                    title: 'Request is now pre-approved',
+                    message: 'All initial approvals are complete. Please proceed to Step 3 to select request type.'
+                };
+            }
+            
+            if (status.indexOf('Step 3') !== -1) {
+                return {
+                    tone: 'in-progress',
+                    title: 'Step 3: Type Selection',
+                    message: 'Please select whether this is a replacement or additional manpower request.'
+                };
+            }
+            
+            if (status.indexOf('Step 4') !== -1) {
+                return {
+                    tone: 'in-progress',
+                    title: 'Step 4: Review & Submit',
+                    message: 'Review all request details before submitting for final approval.'
+                };
+            }
+            
+            if (status === 'Sourcing In Progress') {
+                return {
+                    tone: 'approved',
+                    title: 'Sourcing In Progress',
+                    message: 'Your request has been fully approved and the Recruitment Department is now sourcing.'
+                };
+            }
+
+            if (status === 'Disapproved') {
+                return {
+                    tone: 'disapproved',
+                    title: 'Request disapproved',
+                    message: latestRemark || 'This request was stopped during the approval workflow.'
+                };
+            }
+
+            if (status === 'On Hold') {
+                return {
+                    tone: 'on-hold',
+                    title: 'Request on hold',
+                    message: latestRemark || `Waiting for clarification from ${request.currentApprover || 'the next approver'}.`
+                };
+            }
+
+            return {
+                tone: 'pending',
+                title: 'Request in progress',
+                message: request.currentApprover
+                    ? `Currently awaiting ${request.currentApprover}.`
+                    : 'Currently in the approval queue.'
+            };
+        }
+
+        function renderStatusOverview(request) {
+            const status = normalizeStatus(request.status, 'Pending');
+            const statusClass = getStatusClass(status);
+            const summary = getRequestStatusSummary(request);
+            const latestRemark = getLatestRemark(request) || 'No remarks yet';
+            const reviewCard = request.reviewState ? `
+                <div class="status-summary-card">
+                    <span class="status-summary-label">Your Review</span>
+                    <div class="status-summary-value">${request.reviewState}</div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="status-overview">
+                    <div class="status-banner ${statusClass}">
+                        <div>
+                            <h3>${summary.title}</h3>
+                            <p>${summary.message}</p>
+                        </div>
+                        <span class="badge badge-${statusClass}">${status}</span>
+                    </div>
+                    <div class="status-summary-grid">
+                        <div class="status-summary-card">
+                            <span class="status-summary-label">Next Approver</span>
+                            <div class="status-summary-value">${request.currentApprover || 'Completed'}</div>
+                        </div>
+                        <div class="status-summary-card">
+                            <span class="status-summary-label">Latest Remark</span>
+                            <div class="status-summary-value">${latestRemark}</div>
+                        </div>
+                        <div class="status-summary-card">
+                            <span class="status-summary-label">Workflow Status</span>
+                            <div class="status-summary-value">${status}</div>
+                        </div>
+                        ${reviewCard}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderApprovalTracker(request) {
+            // Build the 6-step workflow tracker
+            const status = normalizeStatus(request.status, 'Pending');
+            const isInStep3 = status.indexOf('Step 3') !== -1;
+            const isInStep4 = status.indexOf('Step 4') !== -1;
+            const isInStepsOrCompleted = status.indexOf('Step') !== -1 || status === 'Sourcing In Progress';
+            
+            // Initialize all 6 steps
+            const sixSteps = [
+                { phase: 1, step: 'Step 1', label: 'Plant Head Approval', role: 'Plant Head', type: 'approval' },
+                { phase: 2, step: 'Step 2', label: 'BU Head Approval', role: 'BU Head', type: 'approval' },
+                { phase: 3, step: 'Step 3', label: 'Type Selection', role: 'Requestor', type: 'action' },
+                { phase: 4, step: 'Step 4', label: 'Review & Submit', role: 'Requestor', type: 'action' },
+                { phase: 5, step: 'Step 5', label: 'Final Approval (Legal & HROD)', role: 'Legal Team + Corporate HROD', type: 'approval' },
+                { phase: 6, step: 'Step 6', label: 'Sourcing In Progress', role: 'Recruitment', type: 'system' }
+            ];
+            
+            // Determine state of each step based on approval columns
+            const currentApprover = (request.currentApprover || '').toLowerCase().trim();
+            const nextApproverLower = currentApprover; // renamed from currentApprover to nextApprover in backend
+            
+            // Get approval column values
+            const plantHeadAppr = (request.plantHeadApproval || '').toLowerCase().trim();
+            const buHeadAppr = (request.buHeadApproval || '').toLowerCase().trim();
+            const typeSelAppr = (request.typeSelectionApproval || '').toLowerCase().trim();
+            const reviewAppr = (request.reviewApproval || '').toLowerCase().trim();
+            const legalAppr = (request.legalApproval || '').toLowerCase().trim();
+            const corpHrodAppr = (request.corporateHrodApproval || '').toLowerCase().trim();
+            const recruitNotif = (request.recruitmentNotification || '').toLowerCase().trim();
+            
+            // Helper to get state from approval column
+            const getApprovalState = (approvalValue) => {
+                if (approvalValue.indexOf('approved') === 0) {
+                    return { state: 'completed', label: 'Approved' };
+                } else if (approvalValue.indexOf('disapproved') === 0) {
+                    return { state: 'disapproved', label: 'Disapproved' };
+                } else if (approvalValue.indexOf('hold') !== -1) {
+                    return { state: 'on_hold', label: 'On Hold' };
+                }
+                return null;
+            };
+            
+            const workflowSteps = sixSteps.map(step => {
+                let state = 'pending';
+                let stateLabel = 'Pending';
+                
+                // Check global status first
+                if (status === 'Disapproved') {
+                    state = 'disapproved';
+                    stateLabel = 'Disapproved';
+                } else if (status === 'On Hold') {
+                    state = 'on_hold';
+                    stateLabel = 'On Hold';
+                } else if (status === 'Approved' || isInStepsOrCompleted) {
+                    // Past initial approvals
+                    if (step.phase === 1 || step.phase === 2) {
+                        state = 'completed';
+                        stateLabel = 'Approved';
+                    }
+                }
+                
+                // Step 1: Plant Head Approval
+                if (step.phase === 1) {
+                    if (!status.match(/disapproved|on hold/i)) {
+                        if (plantHeadAppr) {
+                            const apprState = getApprovalState(plantHeadAppr);
+                            if (apprState) {
+                                state = apprState.state;
+                                stateLabel = apprState.label;
+                            }
+                        } else if (nextApproverLower.indexOf('plant') !== -1) {
+                            state = 'current';
+                            stateLabel = 'Awaiting Plant Head';
+                        } else if (nextApproverLower.indexOf('bu') !== -1 || buHeadAppr || status === 'Approved' || isInStepsOrCompleted) {
+                            state = 'completed';
+                            stateLabel = 'Approved';
+                        }
+                    }
+                }
+                // Step 2: BU Head Approval
+                else if (step.phase === 2) {
+                    if (!status.match(/disapproved|on hold/i)) {
+                        if (buHeadAppr) {
+                            const apprState = getApprovalState(buHeadAppr);
+                            if (apprState) {
+                                state = apprState.state;
+                                stateLabel = apprState.label;
+                            }
+                        } else if (nextApproverLower.indexOf('bu') !== -1) {
+                            state = 'current';
+                            stateLabel = 'Awaiting BU Head';
+                        } else if (plantHeadAppr.indexOf('disapproved') !== -1 || plantHeadAppr.indexOf('hold') !== -1) {
+                            state = 'pending';
+                            stateLabel = 'Pending';
+                        } else if (plantHeadAppr && !buHeadAppr && status === 'Approved') {
+                            state = 'completed';
+                            stateLabel = 'Approved';
+                        }
+                    }
+                }
+                // Step 3: Type Selection
+                else if (step.phase === 3) {
+                    if (isInStep3) {
+                        state = 'current';
+                        stateLabel = 'In Progress';
+                    } else if (typeSelAppr) {
+                        const apprState = getApprovalState(typeSelAppr);
+                        state = apprState ? apprState.state : 'completed';
+                        stateLabel = apprState ? apprState.label : 'Complete';
+                    } else if (isInStep4 || status === 'Sourcing In Progress') {
+                        state = 'completed';
+                        stateLabel = 'Complete';
+                    } else if (status === 'Approved') {
+                        state = 'pending';
+                        stateLabel = 'Ready';
+                    }
+                }
+                // Step 4: Review & Submit
+                else if (step.phase === 4) {
+                    if (isInStep4) {
+                        state = 'current';
+                        stateLabel = 'In Progress';
+                    } else if (reviewAppr) {
+                        const apprState = getApprovalState(reviewAppr);
+                        state = apprState ? apprState.state : 'completed';
+                        stateLabel = apprState ? apprState.label : 'Complete';
+                    } else if (status === 'Sourcing In Progress' || (legalAppr || corpHrodAppr)) {
+                        state = 'completed';
+                        stateLabel = 'Complete';
+                    }
+                }
+                // Step 5: Final Approval (Legal & Corporate HROD)
+                else if (step.phase === 5) {
+                    const anyLegalDecision = legalAppr && getApprovalState(legalAppr);
+                    const anyCorporateDecision = corpHrodAppr && getApprovalState(corpHrodAppr);
+                    
+                    if (legalAppr && !corpHrodAppr) {
+                        const apprState = getApprovalState(legalAppr);
+                        state = apprState ? apprState.state : 'in_progress';
+                        stateLabel = apprState ? apprState.label : 'Legal Approved';
+                    } else if (corpHrodAppr) {
+                        const apprState = getApprovalState(corpHrodAppr);
+                        state = apprState ? apprState.state : 'completed';
+                        stateLabel = apprState ? apprState.label : 'Complete';
+                    } else if (nextApproverLower.indexOf('legal') !== -1) {
+                        state = 'current';
+                        stateLabel = 'In Progress';
+                    } else if (status === 'Sourcing In Progress') {
+                        state = 'completed';
+                        stateLabel = 'Complete';
+                    }
+                }
+                // Step 6: Recruitment Notification
+                else if (step.phase === 6) {
+                    if (status === 'Sourcing In Progress' || recruitNotif) {
+                        state = 'completed';
+                        stateLabel = 'Active';
+                    }
+                }
+                
+                return {
+                    ...step,
+                    state: state,
+                    stateLabel: stateLabel
+                };
+            });
+            
+            const trackerHtml = workflowSteps.map((step, index) => {
+                const badgeClass = step.state === 'completed' ? 'success' : 
+                                   step.state === 'current' ? 'warning' : 
+                                   step.state === 'disapproved' ? 'danger' :
+                                   step.state === 'on_hold' ? 'info' : 'secondary';
+                
+                return `
+                    <div class="tracker-step ${step.state}">
+                        <div class="tracker-marker">
+                            <span class="tracker-dot"></span>
+                            ${index < workflowSteps.length - 1 ? '<span class="tracker-line"></span>' : ''}
+                        </div>
+                        <div class="tracker-content">
+                            <div class="tracker-header-row">
+                                <strong>${step.label}</strong>
+                                <span class="badge badge-${badgeClass}">${step.stateLabel}</span>
+                            </div>
+                            <div class="tracker-meta">${step.role}</div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            const nextSteps = getNextStepsInfo(request);
+            const nextStepsHtml = nextSteps.displayed ? `<div class="tracker-next-steps">${nextSteps.text}</div>` : '';
+
+            return `
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>🧭 6-Step Workflow Tracker</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="tracker-steps">${trackerHtml}</div>
+                        ${nextStepsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderApprovalRemarkCards(request) {
+            if (!request.approvalSteps || !request.approvalSteps.length) {
+                return '';
+            }
+
+            const cards = request.approvalSteps.map((step, index) => {
+                const remark = getApprovalRemark(request, step, index);
+                if (!remark) {
+                    return '';
+                }
+
+                const state = getApprovalStepState(request, step, index);
+                return `
+                    <div class="remark-card ${state}">
+                        <div class="remark-card-header">
+                            <div>
+                                <div class="remark-card-title">${step.label || `Step ${index + 1}`}</div>
+                                <div class="remark-card-meta">${step.approver || '-'}</div>
+                            </div>
+                            <span class="badge badge-${getTrackerBadgeClass(state)}">${getTrackerStateLabel(state)}</span>
+                        </div>
+                        <div class="remark-card-body">${remark}</div>
+                    </div>
+                `;
+            }).filter(Boolean).join('');
+
+            if (!cards) {
+                return '';
+            }
+
+            return `
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>💬 Approval Remarks</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="remarks-grid">${cards}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderPositionsTable(request) {
+            if (!request.positions || !request.positions.length) {
+                return '';
+            }
+
+            let positionsHtml = `
+                <table class="table">
+                    <tr>
+                        <th>Position</th>
+                        <th>Headcount</th>
+                    </tr>
+            `;
+
+            request.positions.forEach(pos => {
+                positionsHtml += `
+                    <tr>
+                        <td>${pos.position}</td>
+                        <td>${pos.headcount}</td>
+                    </tr>
+                `;
+            });
+
+            positionsHtml += `</table>`;
+            return positionsHtml;
+        }
+
+        function renderAttachedFiles(request) {
+            if (!request.attachedFiles || !request.attachedFiles.trim()) {
+                return '';
+            }
+
+            const files = request.attachedFiles.split('|').map(f => f.trim()).filter(f => f);
+            if (!files.length) {
+                return '';
+            }
+
+            let html = `
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📎 Attached Files</h4>
+                    </div>
+                    <div class="card-body">
+                        <ul class="file-list">
+            `;
+
+            files.forEach(fileStr => {
+                const parts = fileStr.split(';');
+                const name = parts[0];
+                const url = parts[1];
+                html += `<li><span>${name}</span><button class="btn btn-sm btn-primary" onclick="viewAttachedFile('${url}')">View</button></li>`;
+            });
+
+            html += `
+                        </ul>
+                    </div>
+                </div>
+            `;
+
+            return html;
+        }
+
+        function updateApprovalActionButtons(canAct) {
+            ['approvalHoldBtn', 'approvalDisapproveBtn', 'approvalApproveBtn'].forEach(id => {
+                const button = document.getElementById(id);
+                if (button) {
+                    button.style.display = canAct ? 'inline-flex' : 'none';
+                }
+            });
+        }
+
+        function openApprovalModal(requestID) {
+            const cachedRequest = getCachedRequest(appState.pendingApprovals, requestID);
+            if (cachedRequest) {
+                onLoadRequestForApproval(cachedRequest);
+                openModal('approvalModal');
+                return;
+            }
+
+            document.getElementById('approvalModalContent').innerHTML = '<p>Loading request details...</p>';
+            openModal('approvalModal');
+            google.script.run.withSuccessHandler(function(request) {
+                const contextRequest = getCachedRequest(appState.pendingApprovals, requestID);
+                onLoadRequestForApproval(Object.assign({}, request || {}, contextRequest || {}));
+            }).getRequestByID(requestID);
+        }
+
+        function openRequestDetails(requestID) {
+            const cachedRequest = getCachedRequest(appState.myRequests, requestID);
+            if (cachedRequest) {
+                onLoadRequestDetails(cachedRequest);
+                return;
+            }
+
+            document.getElementById('requestDetailModalContent').innerHTML = '<p>Loading request details...</p>';
+            openModal('requestDetailModal');
+            google.script.run.withSuccessHandler(onLoadRequestDetails).getRequestByID(requestID);
+        }
+
+        function onLoadRequestDetails(request) {
+            if (!request) {
+                closeModal('requestDetailModal');
+                alert('Request details could not be loaded.');
+                return;
+            }
+
+            markItemAsSeen('requests', request);
+
+            const manpowerData = request.manpowerData || {};
+            const manpowerValues = getRequestManpowerValues(request);
+            const positionsHtml = renderPositionsTable(request);
+            const status = normalizeStatus(request.status, 'Pending');
+            let exceptionalHtml = '';
+            if (manpowerData.isExceptional) {
+                exceptionalHtml = `
+                    <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                        <strong style="color: #b91c1c;">⚠ EXCEPTIONAL CASE - NO MANPOWER GAP</strong>
+                        <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #7f1d1d;">
+                            <p><strong>Optimum HC:</strong> ${manpowerData.optimumHC} | <strong>Actual HC:</strong> ${manpowerData.actualHC}</p>
+                            <p>This request was submitted as an exceptional case due to ${manpowerData.gap < 0 ? 'surplus' : 'no'} manpower.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const content = `
+                ${exceptionalHtml}
+                ${renderStatusOverview(request)}
+                ${renderApprovalTracker(request)}
+                ${renderApprovalRemarkCards(request)}
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📋 Request Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Request ID</strong></label>
+                            <p>${request.requestID}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Requested By</strong></label>
+                            <p>${request.requestedBy || request.email || '-'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Department</strong></label>
+                            <p>${request.department || '-'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Category</strong></label>
+                            <p>${request.category || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📊 Manpower Data</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Optimum Manpower HC</strong></label>
+                            <p>${formatDisplayValue(manpowerValues.optimumHC)}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Actual Manpower HC</strong></label>
+                            <p>${formatDisplayValue(manpowerValues.actualHC)}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Gap</strong></label>
+                            <p style="${getGapDisplayStyle(manpowerValues.gap)}">${formatDisplayValue(manpowerValues.gap)}</p>
+                        </div>
+                    </div>
+                </div>
+                ${positionsHtml ? `
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h4>👥 Requested Positions</h4>
+                        </div>
+                        <div class="card-body">
+                            ${positionsHtml}
+                        </div>
+                    </div>
+                ` : ''}
+                ${renderAttachedFiles(request)}
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📝 Business Need</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Justification</strong></label>
+                            <p>${request.justification || '-'}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Details</strong></label>
+                            <p>${request.details || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Update footer with status-specific buttons
+            const footerContent = status === 'Approved' 
+                ? `
+                    <div class="modal-footer-actions">
+                        <button class="btn btn-secondary" onclick="closeModal('requestDetailModal')">Close</button>
+                        <button class="btn btn-success" onclick="proceedToStep3Modal('${request.requestID}')">
+                            ➜ Proceed to Step 3: Select Request Type
+                        </button>
+                    </div>
+                `
+                : `
+                    <div class="modal-footer-actions">
+                        <button class="btn btn-secondary" onclick="closeModal('requestDetailModal')">Close</button>
+                    </div>
+                `;
+
+            document.getElementById('requestDetailModalContent').innerHTML = content;
+            document.getElementById('requestDetailModalFooter').innerHTML = footerContent;
+            openModal('requestDetailModal');
+        }
+
+        function onLoadRequestForApproval(request) {
+            appState.currentApproval = request;
+            markItemAsSeen('approvals', request);
+
+            // Check if this is an exceptional case (no gap)
+            let exceptionalHtml = '';
+            const manpowerData = request.manpowerData || {};
+            const manpowerValues = getRequestManpowerValues(request);
+            const positionsHtml = renderPositionsTable(request);
+            if (manpowerData.isExceptional) {
+                exceptionalHtml = `
+                    <div class="info-card warning">
+                        <div class="card-header">
+                            <h4>⚠ Exceptional Case Notice</h4>
+                        </div>
+                        <div class="card-body">
+                            <p><strong>Optimum HC:</strong> ${manpowerData.optimumHC} | <strong>Actual HC:</strong> ${manpowerData.actualHC}</p>
+                            <p>This request requires your approval despite having ${manpowerData.gap < 0 ? 'surplus' : 'no'} manpower.</p>
+                        </div>
+                    </div>
+                `;
+            }
+
+            const attachedFilesHtml = renderAttachedFiles(request);
+            const historyOnly = request.canAct === false;
+            updateApprovalActionButtons(!historyOnly);
+
+            let content = `
+                ${exceptionalHtml}
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📋 Request Information</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Request ID</strong></label>
+                            <p>${request.requestID}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Requested By</strong></label>
+                            <p>${request.requestedBy}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Department</strong></label>
+                            <p>${request.department}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Category</strong></label>
+                            <p>${request.category}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📊 Manpower Data</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Optimum Manpower HC</strong></label>
+                            <p>${formatDisplayValue(manpowerValues.optimumHC)}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Actual Manpower HC</strong></label>
+                            <p>${formatDisplayValue(manpowerValues.actualHC)}</p>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Gap</strong></label>
+                            <p style="${getGapDisplayStyle(manpowerValues.gap)}">${formatDisplayValue(manpowerValues.gap)}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>📝 Justification</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>${request.justification || 'No justification provided.'}</p>
+                    </div>
+                </div>
+                ${positionsHtml ? `
+                <div class="info-card">
+                    <div class="card-header">
+                        <h4>👥 Requested Positions</h4>
+                    </div>
+                    <div class="card-body">
+                        ${positionsHtml}
+                    </div>
+                </div>
+                ` : ''}
+                ${attachedFilesHtml}
+                ${renderStatusOverview(request)}
+                ${renderApprovalTracker(request)}
+                ${renderApprovalRemarkCards(request)}
+                ${historyOnly ? `
+                    <div class="alert alert-info">
+                        <div>
+                            <strong>History view only.</strong>
+                            <div>This request remains in your Approval tab for tracking, but no further action is required from you.</div>
+                        </div>
+                    </div>
+                ` : ''}
+                ${historyOnly ? '' : `
+                    <div class="info-card">
+                        <div class="card-header">
+                            <h4>💬 Approval Comments</h4>
+                        </div>
+                        <div class="card-body">
+                            <div class="form-group">
+                                <label class="form-label">Comments (Required for Disapproval)</label>
+                                <textarea class="form-textarea" id="approvalComments" placeholder="Enter your comments..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                `}
+            `;
+
+            document.getElementById('approvalModalContent').innerHTML = content;
+        }
+
+        function proceedToStep3Modal(requestID) {
+            if (!requestID) {
+                alert('Request ID is missing');
+                return;
+            }
+
+            appState.currentStep3Request = null;
+            
+            // Fetch the request to get full details
+            showLoadingModal('Loading request details...');
+            google.script.run
+                .withSuccessHandler((request) => {
+                    hideLoadingModal();
+                    if (!request) {
+                        alert('Request not found');
+                        return;
+                    }
+                    appState.currentStep3Request = request;
+                    openStep3SelectionModal(requestID);
+                })
+                .withFailureHandler((error) => {
+                    hideLoadingModal();
+                    alert('Error loading request: ' + error);
+                })
+                .getRequestByID(requestID);
+        }
+
+        function openStep3SelectionModal(requestID) {
+            const requestID_str = requestID;
+            const modalContent = `
+                <div style="padding: 24px;">
+                    <h3 style="margin-top: 0; color: #0f172a;">Step 3: Select Request Type</h3>
+                    <p style="color: #475569; margin-bottom: 20px;">Please select the type of manpower request:</p>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: flex; align-items: center; padding: 16px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; gap: 12px; transition: all 0.2s;">
+                            <input type="radio" name="requestType" value="Replacement" style="width: 20px; height: 20px; cursor: pointer;" onchange="onStep3TypeChange('Replacement')">
+                            <div>
+                                <strong style="display: block; color: #0f172a;">Replacement</strong>
+                                <small style="color: #6b7280;">Replace a separated, resigned, or AWOL employee</small>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div style="margin-bottom: 24px;">
+                        <label style="display: flex; align-items: center; padding: 16px; border: 2px solid #e5e7eb; border-radius: 12px; cursor: pointer; gap: 12px; transition: all 0.2s;">
+                            <input type="radio" name="requestType" value="Additional" style="width: 20px; height: 20px; cursor: pointer;" onchange="onStep3TypeChange('Additional')">
+                            <div>
+                                <strong style="display: block; color: #0f172a;">Additional Manpower</strong>
+                                <small style="color: #6b7280;">Add new positions (Seasonal or Regular)</small>
+                            </div>
+                        </label>
+                    </div>
+                    
+                    <div id="step3DetailsContainer" style="display: none; margin-top: 24px; padding-top: 24px; border-top: 1px solid #e5e7eb;"></div>
+                </div>
+            `;
+            
+            document.getElementById('step3ModalContent').innerHTML = modalContent;
+            
+            const footerContent = `
+                <div class="modal-footer-actions">
+                    <button class="btn btn-secondary" onclick="closeModal('step3Modal'); appState.currentStep3Request = null;">Cancel</button>
+                    <button class="btn btn-primary" onclick="submitStep3Selection('${requestID_str}')">Next: Review Details (Step 4)</button>
+                </div>
+            `;
+            
+            document.getElementById('step3ModalFooter').innerHTML = footerContent;
+            openModal('step3Modal');
+        }
+
+        function onStep3TypeChange(type) {
+            const container = document.getElementById('step3DetailsContainer');
+            
+            if (type === 'Replacement') {
+                container.innerHTML = `
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Select Employee to Replace</strong></label>
+                            <p style="font-size: 0.9em; color: #6b7280; margin-bottom: 10px;">Select from separated, resigned, or AWOL employees:</p>
+                            <select id="replacementEmployeeSelect" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 1em;">
+                                <option value="">-- Choose an employee --</option>
+                                <option value="emp1">John Doe - Production Operator (Resigned)</option>
+                                <option value="emp2">Jane Smith - Technician (Separated)</option>
+                                <option value="emp3">Bob Wilson - Supervisor (AWOL)</option>
+                            </select>
+                        </div>
+                    </div>
+                `;
+            } else if (type === 'Additional') {
+                container.innerHTML = `
+                    <div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>Employment Type</strong></label>
+                            <div style="display: flex; gap: 16px; margin-bottom: 16px;">
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="employmentType" value="Regular" checked onchange="onEmploymentTypeChange('Regular')">
+                                    Regular (Permanent)
+                                </label>
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="radio" name="employmentType" value="Seasonal" onchange="onEmploymentTypeChange('Seasonal')">
+                                    Seasonal (Temporary)
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div id="positionsContainer">
+                            <div class="position-entry" style="margin-bottom: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;">
+                                <div class="form-group">
+                                    <label class="form-label"><strong>Position Title</strong></label>
+                                    <input type="text" class="position-title" placeholder="e.g., Production Operator" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label"><strong>Headcount</strong></label>
+                                    <input type="number" class="position-headcount" value="1" min="1" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                </div>
+                                <div id="seasonalDateFields" style="display: none;">
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>Start Date</strong></label>
+                                        <input type="date" class="position-startDate" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label"><strong>End Date</strong></label>
+                                        <input type="date" class="position-endDate" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <button class="btn btn-secondary" onclick="addPositionField()" style="margin-top: 8px;">+ Add Another Position</button>
+                    </div>
+                `;
+            }
+            
+            container.style.display = 'block';
+        }
+
+        function onEmploymentTypeChange(type) {
+            const dateFields = document.querySelectorAll('#seasonalDateFields');
+            dateFields.forEach(field => {
+                field.style.display = type === 'Seasonal' ? 'block' : 'none';
+            });
+        }
+
+        function addPositionField() {
+            const container = document.getElementById('positionsContainer');
+            const newEntry = document.createElement('div');
+            newEntry.className = 'position-entry';
+            newEntry.style.cssText = 'margin-bottom: 16px; padding: 16px; border: 1px solid #e5e7eb; border-radius: 8px;';
+            
+            const employmentType = document.querySelector('input[name="employmentType"]:checked')?.value || 'Regular';
+            
+            newEntry.innerHTML = `
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                    <strong>Position ${container.querySelectorAll('.position-entry').length + 1}</strong>
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" style="border: none; background: #ef4444; color: white; padding: 4px 8px; border-radius: 4px; cursor: pointer;">Remove</button>
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><strong>Position Title</strong></label>
+                    <input type="text" class="position-title" placeholder="e.g., Production Operator" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                </div>
+                <div class="form-group">
+                    <label class="form-label"><strong>Headcount</strong></label>
+                    <input type="number" class="position-headcount" value="1" min="1" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                </div>
+                ${employmentType === 'Seasonal' ? `
+                    <div id="seasonalDateFields" style="display: block;">
+                        <div class="form-group">
+                            <label class="form-label"><strong>Start Date</strong></label>
+                            <input type="date" class="position-startDate" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><strong>End Date</strong></label>
+                            <input type="date" class="position-endDate" style="width: 100%; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px;">
+                        </div>
+                    </div>
+                ` : ''}
+            `;
+            
+            container.appendChild(newEntry);
+        }
+
+        function submitStep3Selection(requestID) {
+            const requestType = document.querySelector('input[name="requestType"]:checked')?.value;
+            
+            if (!requestType) {
+                alert('Please select a request type');
+                return;
+            }
+            
+            const step3Data = {
+                requestType: requestType,
+                positions: []
+            };
+            
+            if (requestType === 'Replacement') {
+                const employeeSelect = document.getElementById('replacementEmployeeSelect');
+                if (!employeeSelect.value) {
+                    alert('Please select an employee to replace');
+                    return;
+                }
+                step3Data.replacementData = {
+                    employeeID: employeeSelect.value,
+                    employeeName: employeeSelect.options[employeeSelect.selectedIndex].text
+                };
+            } else if (requestType === 'Additional') {
+                const positionEntries = document.querySelectorAll('.position-entry');
+                if (positionEntries.length === 0) {
+                    alert('Please add at least one position');
+                    return;
+                }
+                
+                positionEntries.forEach(entry => {
+                    const title = entry.querySelector('.position-title').value;
+                    const headcount = entry.querySelector('.position-headcount').value;
+                    
+                    if (!title) {
+                        alert('Please fill in all position details');
+                        return;
+                    }
+                    
+                    const position = {
+                        position: title,
+                        headcount: parseInt(headcount) || 1,
+                        type: document.querySelector('input[name="employmentType"]:checked')?.value || 'Regular'
+                    };
+                    
+                    const startDate = entry.querySelector('.position-startDate');
+                    const endDate = entry.querySelector('.position-endDate');
+                    if (startDate && startDate.value) position.startDate = startDate.value;
+                    if (endDate && endDate.value) position.endDate = endDate.value;
+                    
+                    step3Data.positions.push(position);
+                });
+            }
+            
+            // Proceed to Step 4 review
+            openStep4ReviewModal(requestID, step3Data);
+        }
+
+        function openStep4ReviewModal(requestID, step3Data) {
+            const request = appState.currentStep3Request;
+            
+            let positionsReview = '';
+            if (step3Data.requestType === 'Replacement' && step3Data.replacementData) {
+                positionsReview = `
+                    <div style="padding: 12px; background: #f0f9ff; border-radius: 8px; margin-bottom: 16px;">
+                        <p style="margin: 0;"><strong>Replacement Employee:</strong></p>
+                        <p style="margin: 0; color: #475569;">${escapeHtml(step3Data.replacementData.employeeName)}</p>
+                    </div>
+                `;
+            } else if (step3Data.positions && step3Data.positions.length > 0) {
+                positionsReview = '<table style="width: 100%; border-collapse: collapse;">';
+                positionsReview += '<tr style="background: #f3f4f6; border: 1px solid #e5e7eb;"><th style="padding: 8px; text-align: left;">Position</th><th style="padding: 8px; text-align: center;">Count</th><th style="padding: 8px; text-align: center;">Type</th></tr>';
+                step3Data.positions.forEach(pos => {
+                    positionsReview += `<tr style="border: 1px solid #e5e7eb;"><td style="padding: 8px;">${escapeHtml(pos.position)}</td><td style="padding: 8px; text-align: center;">${pos.headcount}</td><td style="padding: 8px; text-align: center;">${escapeHtml(pos.type)}</td></tr>`;
+                });
+                positionsReview += '</table>';
+            }
+            
+            const modalContent = `
+                <div style="padding: 24px;">
+                    <h3 style="margin-top: 0; color: #0f172a;">Step 4: Review & Submit</h3>
+                    <p style="color: #475569; margin-bottom: 20px;">Please review the details below before submitting for final approval:</p>
+                    
+                    <div style="padding: 16px; background: #f9fafb; border-radius: 12px; margin-bottom: 20px;">
+                        <h4 style="margin-top: 0; color: #0f172a;">Original Request Information</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px; font-size: 0.95em;">
+                            <div>
+                                <strong style="display: block; color: #475569; font-size: 0.85em;">Request ID</strong>
+                                <p style="margin: 0; color: #0f172a;">${escapeHtml(request.requestID)}</p>
+                            </div>
+                            <div>
+                                <strong style="display: block; color: #475569; font-size: 0.85em;">Department</strong>
+                                <p style="margin: 0; color: #0f172a;">${escapeHtml(request.department)}</p>
+                            </div>
+                            <div>
+                                <strong style="display: block; color: #475569; font-size: 0.85em;">Category</strong>
+                                <p style="margin: 0; color: #0f172a;">${escapeHtml(request.category)}</p>
+                            </div>
+                            <div>
+                                <strong style="display: block; color: #475569; font-size: 0.85em;">Section</strong>
+                                <p style="margin: 0; color: #0f172a;">${escapeHtml(request.section)}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div style="padding: 16px; background: #f0fdf4; border-radius: 12px; margin-bottom: 20px; border: 1px solid #86efac;">
+                        <h4 style="margin-top: 0; color: #166534;">Step 3 Details: Request Type</h4>
+                        <p style="margin: 0 0 12px;"><strong>Type Selected:</strong> ${escapeHtml(step3Data.requestType)}</p>
+                        ${positionsReview}
+                    </div>
+                    
+                    <div style="padding: 16px; background: #fef3c7; border-radius: 12px; border: 1px solid #fcd34d;">
+                        <p style="margin: 0; font-size: 0.9em;"><strong>⚠ Note:</strong> Upon submission, this request will enter the final approval chain (Legal Team → Corporate HROD). Once approved, the Recruitment Department will be notified and the status will change to "Sourcing In Progress".</p>
+                    </div>
+                </div>
+            `;
+            
+            document.getElementById('step4ModalContent').innerHTML = modalContent;
+            
+            // Store step3Data in appState to avoid JSON escaping issues
+            appState.pendingStep3Data = step3Data;
+            
+            const footerContent = `
+                <div class="modal-footer-actions">
+                    <button class="btn btn-secondary" onclick="closeModal('step4Modal'); openStep3SelectionModal('${requestID}');">Back to Step 3</button>
+                    <button class="btn btn-success" onclick="submitForStep5('${requestID}')">Submit for Final Approval (Step 5)</button>
+                </div>
+            `;
+            
+            document.getElementById('step4ModalFooter').innerHTML = footerContent;
+            
+            closeModal('step3Modal');
+            openModal('step4Modal');
+        }
+
+        function submitForStep5(requestID) {
+            const step3Data = appState.pendingStep3Data;
+            
+            if (!step3Data) {
+                alert('Error: Step 3 data is missing. Please go back and select again.');
+                return;
+            }
+            
+            console.log('submitForStep5 called with requestID:', requestID, 'step3Data:', step3Data);
+            
+            showLoadingModal('Saving request type and submitting for final approval...');
+            google.script.run
+                .withSuccessHandler((result) => {
+                    hideLoadingModal();
+                    console.log('Step 5 submission result:', result);
+                    if (!result || !result.success) {
+                        alert(result && result.message ? result.message : 'Failed to submit request.');
+                        return;
+                    }
+                    
+                    closeModal('step4Modal');
+                    appState.currentStep3Request = null;
+                    appState.myRequests = [];
+                    appState.pendingStep3Data = null;
+                    loadMyRequests(true);
+                    
+                    alert('✓ Request submitted successfully!\n\nYour request has been saved and submitted for final approval.\n\nNext Steps:\n1. Legal Team will review\n2. Corporate HROD will approve\n3. Recruitment will be notified\n4. Status will change to "Sourcing In Progress"\n\nYou will receive email notifications as the request progresses.');
+                })
+                .withFailureHandler((error) => {
+                    hideLoadingModal();
+                    console.error('Step 5 submission error:', error);
+                    alert('Failed to submit request: ' + (error ? error.toString() : 'Unknown error'));
+                })
+                .saveStep3DataAndSubmit(requestID, step3Data);
+        }
+
+        function proceedWithApprovedRequest(requestID) {
+            // Legacy function - now calls proceedToStep3Modal
+            proceedToStep3Modal(requestID);
+}
+
+        function submitApproval(action) {
+            if (!appState.currentApproval || appState.currentApproval.canAct === false) {
+                alert('This request is shown for tracking only and cannot be acted on again.');
+                return;
+            }
+
+            const commentsField = document.getElementById('approvalComments');
+            const comments = commentsField ? commentsField.value : '';
+
+            if (action === 'Disapprove' && !comments.trim()) {
+                alert('Please provide comments for disapproval');
+                return;
+            }
+
+            showLoadingModal(action + ' request...');
+
+            google.script.run
+                .withSuccessHandler(onApprovalSubmitted)
+                .withFailureHandler(onApprovalError)
+                .approveRequest(
+                    appState.currentApproval.requestID,
+                    action,
+                    comments
+                );
+        }
+
+        function onApprovalSubmitted(result) {
+            hideLoadingModal();
+
+            if (!result || !result.success) {
+                alert(result && result.message ? result.message : 'Approval action failed.');
+                return;
+            }
+
+            closeModal('approvalModal');
+            appState.pendingApprovals = [];
+            appState.myRequests = [];
+
+            loadPendingApprovals(true);
+            loadMyRequests(true);
+            loadDashboard();
+
+            const approvedLevels = result.approvedLevels && result.approvedLevels.length > 0
+                ? result.approvedLevels.join(' / ')
+                : result.currentLevel || '';
+
+            let message = result.message;
+            if (approvedLevels && result.newStatus === 'Pending') {
+                message += '\nApproved at: ' + approvedLevels;
+                if (result.nextApproverLabel) {
+                    message += '\nNext approval: ' + result.nextApproverLabel;
+                }
+            } else if (approvedLevels && result.newStatus === 'Approved') {
+                message += '\nApproved at: ' + approvedLevels;
+            } else if (result.currentLevel && result.newStatus === 'Disapproved') {
+                message += '\nDisapproved at: ' + result.currentLevel;
+            }
+
+            alert(message);
+        }
+
+        function onApprovalError(error) {
+            hideLoadingModal();
+            console.error('Approval submission error:', error);
+            alert('Approval action failed: ' + (error ? error.toString() : 'Unknown error'));
+        }
+
+        function viewAttachedFile(fileUrl) {
+            if (fileUrl && fileUrl.startsWith('http')) {
+                window.open(fileUrl, '_blank');
+            } else {
+                alert('File URL not available for: ' + fileUrl);
+            }
+        }
+
+        function formatDisplayValue(value, fallback = 'N/A') {
+            return value === '' || value === null || value === undefined ? fallback : value;
+        }
+
+        function getGapDisplayStyle(value) {
+            return Number(value) < 0 ? 'color: var(--danger); font-weight: 700;' : '';
+        }
+
+        function getRequestManpowerValues(request) {
+            const manpowerData = request.manpowerData || {};
+            return {
+                optimumHC: request.optimumHC !== '' && request.optimumHC !== null && request.optimumHC !== undefined
+                    ? request.optimumHC
+                    : manpowerData.optimumHC,
+                actualHC: request.actualHC !== '' && request.actualHC !== null && request.actualHC !== undefined
+                    ? request.actualHC
+                    : manpowerData.actualHC,
+                gap: request.gap !== '' && request.gap !== null && request.gap !== undefined
+                    ? request.gap
+                    : manpowerData.gap
+            };
+        }
+
+        function getSeenStorageKey(scope) {
+            const email = appState.user && appState.user.email ? appState.user.email : 'guest';
+            return `mr-system:${email}:${scope}:seen`;
+        }
+
+        function getSeenItems(scope) {
+            try {
+                return JSON.parse(localStorage.getItem(getSeenStorageKey(scope)) || '[]');
+            } catch (error) {
+                console.warn('Failed to read seen items from storage:', error);
+                return [];
+            }
+        }
+
+        function setSeenItems(scope, items) {
+            localStorage.setItem(getSeenStorageKey(scope), JSON.stringify(items.slice(-500)));
+        }
+
+        function getItemSignature(item) {
+            const manpowerValues = getRequestManpowerValues(item);
+            return [
+                item.requestID || '',
+                item.status || '',
+                item.reviewState || '',
+                item.currentApprover || item.approverLevel || '',
+                item.approverNotes || '',
+                item.remarks1 || '',
+                item.remarks2 || '',
+                item.remarks3 || '',
+                manpowerValues.gap === undefined || manpowerValues.gap === null ? '' : manpowerValues.gap
+            ].join('|');
+        }
+
+        function markItemAsSeen(scope, item) {
+            const signature = getItemSignature(item);
+            const seenItems = new Set(getSeenItems(scope));
+            seenItems.add(signature);
+            setSeenItems(scope, Array.from(seenItems));
+            updateNavigationBadges();
+        }
+
+        function getUnseenCount(scope, items) {
+            const seenItems = new Set(getSeenItems(scope));
+            return (items || []).filter(item => !seenItems.has(getItemSignature(item))).length;
+        }
+
+        function renderNavBadge(elementId, count) {
+            const badge = document.getElementById(elementId);
+            if (!badge) return;
+
+            if (count > 0) {
+                badge.textContent = count > 99 ? '99+' : String(count);
+                badge.classList.add('visible');
+            } else {
+                badge.textContent = '';
+                badge.classList.remove('visible');
+            }
+        }
+
+        function updateNavigationBadges() {
+            renderNavBadge('requestsBadge', getUnseenCount('requests', appState.myRequests));
+            renderNavBadge('approvalsBadge', getUnseenCount('approvals', appState.pendingApprovals));
+        }
+
+        // ============================================================
+        // FORM: STEP NAVIGATION
+        // ============================================================
+
+        function nextStep(currentStep) {
+            const nextStep = currentStep + 1;
+
+            // Validate current step
+            if (!validateStep(currentStep)) {
+                return;
+            }
+
+            // Special handling for Step 2 with exceptional case (no gap)
+            if (currentStep === 2 && appState.formData.isExceptional) {
+                // For exceptional cases, submit immediately and show confirmation
+                submitExceptionalRequest();
+                return;
+            }
+
+            if (currentStep === 1) {
+                loadManpowerGap();
+            } else if (currentStep === 2) {
+                // loadRequestTypeFields(); // Removed as it's handled by onchange
+            } else if (currentStep === 3) {
+                loadReviewSummary();
+            }
+
+            // Hide current step
+            document.querySelectorAll('.form-step[data-step="' + currentStep + '"]').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            // Show next step
+            document.querySelectorAll('.form-step[data-step="' + nextStep + '"]').forEach(el => {
+                el.style.display = 'block';
+            });
+
+            // Update stepper
+            updateStepper(nextStep);
+        }
+
+        function setFormSubmitting(isSubmitting) {
+            appState.isSubmitting = isSubmitting;
+            const step2Button = document.getElementById('step2NextBtn');
+            const finalButton = document.getElementById('finalSubmitBtn');
+
+            if (step2Button) step2Button.disabled = isSubmitting;
+            if (finalButton) finalButton.disabled = isSubmitting;
+        }
+
+        function submitExceptionalRequest() {
+            if (appState.isSubmitting) return;
+
+            appState.formData.justification = document.getElementById('exceptionalJustificationField')?.value || appState.formData.justification || "Exceptional case submitted from Step 2";
+            setFormSubmitting(true);
+            showLoadingModal('Submitting exceptional request...');
+
+            if (appState.formData.uploadedFiles && appState.formData.uploadedFiles.length > 0) {
+                console.log('Exceptional - Converting files to base64...');
+                convertFilesToBase64(appState.formData.uploadedFiles, (filesData) => {
+                    const payload = buildSerializableRequestPayload({ filesData: filesData });
+                    console.log('Exceptional - Files converted. Submitting via google.script.run');
+                    google.script.run
+                        .withSuccessHandler(onExceptionalRequestSubmitted)
+                        .withFailureHandler(onSubmissionError)
+                        .createRequestWithFiles(payload);
+                });
+            } else {
+                console.log('Exceptional - No files. Using google.script.run');
+                const payload = buildSerializableRequestPayload();
+                google.script.run
+                    .withSuccessHandler(onExceptionalRequestSubmitted)
+                    .withFailureHandler(onSubmissionError)
+                    .createRequest(payload);
+            }
+        }
+
+        function onExceptionalRequestSubmitted(result) {
+            hideLoadingModal();
+            setFormSubmitting(false);
+            if (result.success) {
+                appState.myRequests = [];
+                appState.pendingApprovals = [];
+
+                // Show confirmation modal for exceptional case
+                const modal = document.createElement('div');
+                modal.className = 'modal active';
+                modal.onclick = (e) => {
+                    if (e.target === modal) return;
+                };
+                modal.innerHTML = `
+                    <div class="modal-content" style="max-width: 500px;">
+                        <div class="modal-header">
+                            <h2 class="modal-title">Exceptional Request Submitted</h2>
+                            <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+                        </div>
+                        <div class="modal-body">
+                            <div style="background: rgba(34, 197, 94, 0.1); padding: 1.5rem; border-radius: 8px; border-left: 4px solid #22c55e; margin-bottom: 1.5rem;">
+                                <p style="margin: 0; color: #16a34a;"><strong>✓ Your exceptional request has been submitted successfully!</strong></p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><strong>Request ID</strong></label>
+                                <p style="background: var(--gray-50); padding: 0.75rem; border-radius: 6px; font-weight: 600; color: var(--primary);">${result.requestID}</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><strong>Status</strong></label>
+                                <p>Your request is now routing to <strong>Plant Head</strong> for approval of this exceptional case.</p>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label"><strong>Next Steps</strong></label>
+                                <ul style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                                    <li>You will receive email notifications as your request progresses</li>
+                                    <li>Track the status in <strong>My Requests</strong> tab</li>
+                                    <li>Once Plant Head approves, it proceeds to BU Head</li>
+                                    <li>Notifications will be sent at each approval stage</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-primary" onclick="goToDashboardFromExceptional()">Go to My Requests</button>
+                            <button class="btn btn-secondary" onclick="this.closest('.modal').remove(); resetForm();">Create Another Request</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            } else {
+                alert('Error: ' + result.message);
+            }
+        }
+
+        function goToDashboardFromExceptional() {
+            // Remove the modal
+            document.querySelector('.modal.active').remove();
+            // Go to requests tab
+            switchTab('requests');
+        }
+
+        function previousStep(currentStep) {
+            const prevStep = currentStep - 1;
+
+            document.querySelectorAll('.form-step[data-step="' + currentStep + '"]').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            document.querySelectorAll('.form-step[data-step="' + prevStep + '"]').forEach(el => {
+                el.style.display = 'block';
+            });
+
+            updateStepper(prevStep);
+        }
+
+        function updateStepper(stepNum) {
+            document.querySelectorAll('.step').forEach(step => {
+                const stepNumber = parseInt(step.dataset.step);
+                step.classList.remove('active', 'completed');
+
+                if (stepNumber === stepNum) {
+                    step.classList.add('active');
+                } else if (stepNumber < stepNum) {
+                    step.classList.add('completed');
+                }
+            });
+        }
+
+        function validateStep(stepNum) {
+            if (stepNum === 1) {
+                const category = document.getElementById('categoryField').value;
+                const division = document.getElementById('divisionField').value;
+                const group = document.getElementById('groupField').value;
+                const department = document.getElementById('departmentField').value;
+                const section = document.getElementById('sectionField').value;
+
+                if (!category || !division || !group || !department || !section) {
+                    showAlert('Please fill in all required fields in Step 1', 'danger');
+                    return false;
+                }
+
+                if (category === 'Production') {
+                    const unit = document.getElementById('unitField').value;
+                    const line = document.getElementById('lineField').value;
+                    if (!unit || !line) {
+                        showAlert('Unit and Line are required for Production category', 'danger');
+                        return false;
+                    }
+                }
+
+                appState.formData.category = category;
+                appState.formData.division = division;
+                appState.formData.group = group;
+                appState.formData.department = department;
+                appState.formData.section = section;
+                appState.formData.unit = document.getElementById('unitField').value || '';
+                appState.formData.line = document.getElementById('lineField').value || '';
+
+                return true;
+            } else if (stepNum === 2) {
+                // Check if exceptional justification is required and filled
+                const exceptionalJustificationField = document.getElementById('exceptionalJustificationField');
+                if (exceptionalJustificationField) {
+                    // Field exists, so exceptional case is required
+                    if (!exceptionalJustificationField.value.trim()) {
+                        showAlert('Please provide exceptional justification before proceeding', 'danger');
+                        return false;
+                    }
+                    appState.formData.exceptionalJustification = exceptionalJustificationField.value;
+                }
+                return true;
+            } else if (stepNum === 3) {
+                const requestType = document.querySelector('input[name="requestType"]:checked');
+                if (!requestType) {
+                    showAlert('Please select a request type', 'danger');
+                    return false;
+                }
+
+                appState.formData.requestType = requestType.value;
+                return true;
+            }
+
+            return true;
+        }
+
+        // ============================================================
+        // FORM: FIELD POPULATION
+        // ============================================================
+
+        function populateDivisions() {
+            const select = document.getElementById('divisionField');
+            select.innerHTML = '<option value="">-- Select Division --</option>';
+            const category = document.getElementById('categoryField').value;
+            const structure = appState.structure || {};
+            Object.keys(structure).sort().forEach(div => {
+                if (!category || (structure[div]._categories && structure[div]._categories.includes(category))) {
+                    const option = document.createElement('option');
+                    option.value = div;
+                    option.textContent = div;
+                    select.appendChild(option);
+                }
+            });
+            updateGroupOptions();
+        }
+
+        function updateGroupOptions() {
+            const division = document.getElementById('divisionField').value;
+            const groupSelect = document.getElementById('groupField');
+            groupSelect.innerHTML = '<option value="">-- Select Group --</option>';
+            const category = document.getElementById('categoryField').value;
+            if (!division || !appState.structure[division]) return;
+            const groupsObj = appState.structure[division].groups || {};
+            Object.keys(groupsObj).sort().forEach(group => {
+                if (!category || (groupsObj[group]._categories && groupsObj[group]._categories.includes(category))) {
+                    const option = document.createElement('option');
+                    option.value = group;
+                    option.textContent = group;
+                    groupSelect.appendChild(option);
+                }
+            });
+            updateDepartmentOptions();
+        }
+
+        function updateDepartmentOptions() {
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const deptSelect = document.getElementById('departmentField');
+            deptSelect.innerHTML = '<option value="">-- Select Department --</option>';
+            const category = document.getElementById('categoryField').value;
+            if (!division || !group || !appState.structure[division] || !appState.structure[division].groups[group]) return;
+            const departmentsObj = appState.structure[division].groups[group].departments || {};
+            Object.keys(departmentsObj).sort().forEach(dept => {
+                if (!category || (departmentsObj[dept]._categories && departmentsObj[dept]._categories.includes(category))) {
+                    const option = document.createElement('option');
+                    option.value = dept;
+                    option.textContent = dept;
+                    deptSelect.appendChild(option);
+                }
+            });
+            updateSectionOptions();
+        }
+
+        function updateSectionOptions() {
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const department = document.getElementById('departmentField').value;
+            const sectionSelect = document.getElementById('sectionField');
+            sectionSelect.innerHTML = '<option value="">-- Select Section --</option>';
+            const category = document.getElementById('categoryField').value;
+            if (!division || !group || !department || !appState.structure[division] || !appState.structure[division].groups[group] || !appState.structure[division].groups[group].departments[department]) return;
+            const sectionsObj = appState.structure[division].groups[group].departments[department].sections || {};
+            Object.keys(sectionsObj).sort().forEach(section => {
+                if (!category || (sectionsObj[section]._categories && sectionsObj[section]._categories.includes(category))) {
+                    const option = document.createElement('option');
+                    option.value = section;
+                    option.textContent = section;
+                    sectionSelect.appendChild(option);
+                }
+            });
+            updateUnitOptions();
+        }
+
+        function updateUnitOptions() {
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const department = document.getElementById('departmentField').value;
+            const section = document.getElementById('sectionField').value;
+            const unitSelect = document.getElementById('unitField');
+            unitSelect.innerHTML = '<option value="">-- Select Unit --</option>';
+            const category = document.getElementById('categoryField').value;
+            if (!division || !group || !department || !section || !appState.structure[division] || !appState.structure[division].groups[group] || !appState.structure[division].groups[group].departments[department] || !appState.structure[division].groups[group].departments[department].sections[section]) return;
+            const unitsObj = appState.structure[division].groups[group].departments[department].sections[section].units || {};
+            Object.keys(unitsObj).sort().forEach(unit => {
+                if (!category || (unitsObj[unit]._categories && unitsObj[unit]._categories.includes(category))) {
+                    const option = document.createElement('option');
+                    option.value = unit;
+                    option.textContent = unit;
+                    unitSelect.appendChild(option);
+                }
+            });
+            updateLineOptions();
+        }
+
+        function updateLineOptions() {
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const department = document.getElementById('departmentField').value;
+            const section = document.getElementById('sectionField').value;
+            const unit = document.getElementById('unitField').value;
+            const lineSelect = document.getElementById('lineField');
+            lineSelect.innerHTML = '<option value="">-- Select Line --</option>';
+            const category = document.getElementById('categoryField').value;
+            if (!division || !group || !department || !section || !unit || !appState.structure[division] || !appState.structure[division].groups[group] || !appState.structure[division].groups[group].departments[department] || !appState.structure[division].groups[group].departments[department].sections[section] || !appState.structure[division].groups[group].departments[department].sections[section].units[unit]) return;
+            const linesObj = appState.structure[division].groups[group].departments[department].sections[section].units[unit].lines || {};
+            Object.keys(linesObj).sort().forEach(line => {
+                if (!category || linesObj[line].category === category) {
+                    const option = document.createElement('option');
+                    option.value = line;
+                    option.textContent = line;
+                    lineSelect.appendChild(option);
+                }
+            });
+        }
+
+        function updateCategoryFields() {
+            const category = document.getElementById('categoryField').value;
+            const unitLineContainer = document.getElementById('unitLineContainer');
+            const unitField = document.getElementById('unitField');
+            const lineField = document.getElementById('lineField');
+
+            // Reset all dependent dropdowns
+            document.getElementById('divisionField').value = '';
+            document.getElementById('groupField').value = '';
+            document.getElementById('departmentField').value = '';
+            document.getElementById('sectionField').value = '';
+            unitField.value = '';
+            lineField.value = '';
+
+            populateDivisions();
+
+            if (category === 'Production') {
+                // Show Unit and Line fields for Production
+                unitLineContainer.style.display = 'grid';
+                unitField.disabled = false;
+                lineField.disabled = false;
+            } else {
+                // Hide Unit and Line fields for Non-Production
+                unitLineContainer.style.display = 'none';
+                unitField.disabled = true;
+                lineField.disabled = true;
+                unitField.value = '';
+                lineField.value = '';
+            }
+        }
+
+        // ============================================================
+        // FORM: MANPOWER GAP
+        // ============================================================
+
+        function loadManpowerGap() {
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const department = document.getElementById('departmentField').value;
+            const section = document.getElementById('sectionField').value;
+            const unit = document.getElementById('unitField').value || '';
+            const line = document.getElementById('lineField').value || '';
+
+            google.script.run.withSuccessHandler(onManpowerGapLoaded).calculateManpowerGap(
+                division, group, department, section, unit, line
+            );
+        }
+
+        function onManpowerGapLoaded(gap) {
+            appState.formData.optimumHC = gap.optimumHC;
+            appState.formData.actualHC = gap.actualHC;
+            appState.formData.gap = gap.gap;
+
+            document.getElementById('optimumHC').textContent = gap.optimumHC;
+            document.getElementById('actualHC').textContent = gap.actualHC;
+            document.getElementById('gapValue').textContent = gap.gap;
+            document.getElementById('gapValue').style.color = gap.gap < 0 ? 'var(--danger)' : 'var(--gray-900)';
+
+            // Display selected org info for requestor visibility as a card in the stats grid
+            const division = document.getElementById('divisionField').value;
+            const group = document.getElementById('groupField').value;
+            const department = document.getElementById('departmentField').value;
+            const section = document.getElementById('sectionField').value;
+            const unit = document.getElementById('unitField').value;
+            const line = document.getElementById('lineField').value;
+            const category = document.getElementById('categoryField').value;
+
+            let orgInfoHtml = `
+                <div class="modern-request-details" style="box-shadow:0 2px 12px 0 rgba(37,99,235,0.08);border:1.5px solid #e5e7eb;background:linear-gradient(135deg,#f8fafc 60%,#e0e7ff 100%);border-radius:18px;padding:1.2rem 1.2rem 1.2rem 1.2rem;min-width:220px;">
+                    <div class="card-title" style="font-size:1.05rem;font-weight:700;letter-spacing:0.01em;color:#2563eb;display:flex;align-items:center;gap:0.5rem;margin-bottom:0.7rem;">
+                        <span style='font-size:1.3rem;'>📋</span> Request Details
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr;gap:0.5rem 2.5rem;align-items:center;">
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style='font-size:1.1rem;color:#6366f1;'>🏢</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Division</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(division)}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style='font-size:1.1rem;color:#6366f1;'>👥</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Group</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(group)}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style='font-size:1.1rem;color:#6366f1;'>🏬</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Department</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(department)}</span>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:0.5rem;">
+                            <span style='font-size:1.1rem;color:#6366f1;'>📂</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Section</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(section)}</span>
+                        </div>
+                        ${(category === 'Production') ? `
+                        <div style=\"display:flex;align-items:center;gap:0.5rem;\">
+                            <span style='font-size:1.1rem;color:#6366f1;'>🗂️</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Unit</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(unit)}</span>
+                        </div>
+                        <div style=\"display:flex;align-items:center;gap:0.5rem;\">
+                            <span style='font-size:1.1rem;color:#6366f1;'>🔗</span>
+                            <span style=\"color:#64748b;font-weight:500;min-width:70px;\">Line</span>
+                            <span style=\"font-weight:600;color:#1e293b;\">${escapeHtml(line)}</span>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+            document.getElementById('requestDetailsCard').innerHTML = orgInfoHtml;
+
+            let html = '';
+            let showExceptionalJustification = false;
+
+            if (gap.gap > 0) {
+                html += `<div class="alert alert-success">✓ There is a manpower gap of ${gap.gap} positions. You can proceed with the request.</div>`;
+            } else if (gap.gap === 0) {
+                html += `<div class="alert alert-danger">
+                    <strong>⚠ Exceptional Case: No Manpower Gap</strong><br>
+                    Actual HC (${gap.actualHC}) equals Optimum HC (${gap.optimumHC}). 
+                    This request requires exceptional justification and will be routed directly to Plant Head for approval.
+                </div>`;
+                showExceptionalJustification = true;
+            } else {
+                html += `<div class="alert alert-danger">
+                    <strong>⚠ Exceptional Case: Surplus Manpower</strong><br>
+                    Actual HC (${gap.actualHC}) exceeds Optimum HC (${gap.optimumHC}) by ${Math.abs(gap.gap)} position(s). 
+                    This request requires exceptional justification and will be routed directly to Plant Head for approval.
+                </div>`;
+                showExceptionalJustification = true;
+            }
+
+            document.getElementById('gapAnalysisContainer').innerHTML = html;
+
+            // Show/hide exceptional justification field
+            const exceptionalContainer = document.getElementById('exceptionalJustificationContainer');
+            if (showExceptionalJustification) {
+                exceptionalContainer.innerHTML = `
+                    <div class="card" style="margin-top: 2rem; border-left: 4px solid #ef4444;">
+                        <div class="card-header">
+                            <div class="card-title">Exceptional Justification Required</div>
+                            <div class="card-subtitle">Explain why this request is necessary despite no manpower gap</div>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Justification for Exception <span class="required">*</span></label>
+                            <textarea class="form-textarea" id="exceptionalJustificationField" 
+                                placeholder="Provide detailed justification for this exceptional request..." 
+                                style="min-height: 150px;"></textarea>
+                            <small style="color: var(--gray-500); margin-top: 0.5rem; display: block;">
+                                Note: This request will be sent directly to Plant Head for review and approval.
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Supporting Documents (Optional)</label>
+                            <div style="border: 2px dashed var(--gray-300); padding: 1rem; border-radius: 8px; text-align: center; cursor: pointer; background: var(--gray-50);" onclick="document.getElementById('fileInput').click()">
+                                <div style="font-size: 2rem; margin-bottom: 0.5rem;">📎</div>
+                                <p style="margin: 0; color: var(--gray-600);">Click to upload supporting documents</p>
+                                <small style="color: var(--gray-500);">Attach files to support your justification</small>
+                            </div>
+                            <input type="file" id="fileInput" multiple style="display: none;" onchange="handleFileUpload(event)">
+                            <div id="uploadedFilesContainer" style="margin-top: 1rem;"></div>
+                        </div>
+                    </div>
+                `;
+                appState.formData.isExceptional = true;
+            } else {
+                exceptionalContainer.innerHTML = '';
+                appState.formData.isExceptional = false;
+            }
+        }
+
+        // ============================================================
+        // FORM: REQUEST TYPE
+        // ============================================================
+
+        function updateRequestTypeFields() {
+            const requestType = document.querySelector('input[name="requestType"]:checked').value;
+            const replacementOpts = document.getElementById('replacementOptions');
+            const additionalOpts = document.getElementById('additionalOptions');
+
+            if (requestType === 'Replacement') {
+                replacementOpts.style.display = 'block';
+                additionalOpts.style.display = 'none';
+                loadSeparatedEmployees();
+            } else {
+                replacementOpts.style.display = 'none';
+                additionalOpts.style.display = 'block';
+            }
+
+            // Set positions table visibility
+            if (requestType === 'Additional') {
+                document.getElementById('positionsTableContainer').style.display = 'block';
+            } else {
+                document.getElementById('positionsTableContainer').style.display = 'none';
+            }
+        }
+
+        function updateAdditionalFields() {
+            const additionalType = document.querySelector('input[name="additionalType"]:checked').value;
+            const seasonalDates = document.getElementById('seasonalDatesContainer');
+
+            if (additionalType === 'Seasonal') {
+                seasonalDates.style.display = 'grid';
+            } else {
+                seasonalDates.style.display = 'none';
+            }
+        }
+
+        function loadSeparatedEmployees() {
+            const section = appState.formData.section;
+            const line = appState.formData.line;
+
+            google.script.run.withSuccessHandler(onSeparatedEmployeesLoaded).getSeparatedEmployees(section, line);
+        }
+
+        function onSeparatedEmployeesLoaded(employees) {
+            const select = document.getElementById('employeeField');
+            select.innerHTML = '<option value="">-- Select Employee --</option>';
+
+            employees.forEach(emp => {
+                const option = document.createElement('option');
+                option.value = emp.name;
+                option.textContent = `${emp.name} (${emp.position}) - ${emp.status}`;
+                select.appendChild(option);
+            });
+        }
+
+
+
+        function addPosition() {
+            const position = document.getElementById('positionField').value;
+            const headcount = document.getElementById('headcountField').value;
+            const additionalType = document.querySelector('input[name="additionalType"]:checked').value;
+            const startDate = document.getElementById('startDateField').value;
+            const endDate = document.getElementById('endDateField').value;
+
+            if (!position || !headcount) {
+                alert('Please fill in position and headcount');
+                return;
+            }
+
+            if (additionalType === 'Seasonal' && (!startDate || !endDate)) {
+                alert('Please fill in start and end dates for seasonal positions');
+                return;
+            }
+
+            const newPosition = {
+                position: position,
+                headcount: parseInt(headcount),
+                type: additionalType,
+                startDate: startDate,
+                endDate: endDate
+            };
+
+            appState.formData.positions.push(newPosition);
+
+            renderPositionsTable();
+
+            // Clear fields
+            document.getElementById('positionField').value = '';
+            document.getElementById('headcountField').value = '1';
+            document.getElementById('startDateField').value = '';
+            document.getElementById('endDateField').value = '';
+        }
+
+        function renderPositionsTable() {
+            const tableBody = document.getElementById('positionsTable');
+            tableBody.innerHTML = '';
+
+            appState.formData.positions.forEach((pos, idx) => {
+                const duration = pos.type === 'Seasonal' 
+                    ? `${pos.startDate} to ${pos.endDate}`
+                    : 'Permanent';
+
+                const row = `
+                    <tr>
+                        <td>${pos.position}</td>
+                        <td>${pos.headcount}</td>
+                        <td>${duration}</td>
+                        <td>
+                            <button class="btn btn-danger" onclick="removePosition(${idx})" style="padding: 0.5rem; font-size: 0.8rem;">Remove</button>
+                        </td>
+                    </tr>
+                `;
+                tableBody.innerHTML += row;
+            });
+        }
+
+        function removePosition(idx) {
+            appState.formData.positions.splice(idx, 1);
+            renderPositionsTable();
+        }
+
+        // ============================================================
+        // FORM: REVIEW & SUBMIT
+        // ============================================================
+
+        function loadReviewSummary() {
+            const isExceptional = appState.formData.gap <= 0;
+            const exceptionalAlert = isExceptional ? `
+                <div style="background: rgba(239, 68, 68, 0.1); border-left: 4px solid #ef4444; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem;">
+                    <strong style="color: #b91c1c;">⚠ EXCEPTIONAL CASE - NO MANPOWER GAP</strong>
+                    <div style="margin-top: 0.5rem; font-size: 0.9rem; color: #7f1d1d;">
+                        <p>This request will proceed directly to <strong>Plant Head</strong> for approval due to no manpower gap or surplus headcount.</p>
+                        <p>Approval Chain: Plant Head → BU Head → Legal → Corporate HROD</p>
+                    </div>
+                </div>
+            ` : '';
+
+            const summary = `
+                ${exceptionalAlert}
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">Request Summary</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><strong>Category</strong></label>
+                        <p>${appState.formData.category}</p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><strong>Organization Structure</strong></label>
+                        <p>
+                            ${appState.formData.division} → ${appState.formData.group} → ${appState.formData.department} → ${appState.formData.section}
+                            ${appState.formData.unit ? ' → ' + appState.formData.unit : ''}
+                            ${appState.formData.line ? ' → ' + appState.formData.line : ''}
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><strong>Manpower Gap Analysis</strong></label>
+                        <p>Optimum HC: <strong>${appState.formData.optimumHC}</strong> | Actual HC: <strong>${appState.formData.actualHC}</strong> | Gap: <strong style="${getGapDisplayStyle(appState.formData.gap)}">${appState.formData.gap}</strong></p>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label"><strong>Request Type</strong></label>
+                        <p>${appState.formData.requestType}</p>
+                    </div>
+
+                    ${renderPositionsSummary()}
+
+                    ${appState.formData.exceptionalJustification ? `
+                        <div class="form-group">
+                            <label class="form-label"><strong>Exceptional Justification</strong></label>
+                            <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--warning); white-space: pre-wrap; word-wrap: break-word;">
+                                ${appState.formData.exceptionalJustification}
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    ${appState.formData.uploadedFiles && appState.formData.uploadedFiles.length > 0 ? `
+                        <div class="form-group">
+                            <label class="form-label"><strong>Supporting Documents</strong></label>
+                            <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">
+                                <ul style="margin: 0; padding-left: 1.5rem; color: var(--gray-600);">
+                                    ${appState.formData.uploadedFiles.map(file => `<li>${file.name} (${file.size})</li>`).join('')}
+                                </ul>
+                            </div>
+                        </div>
+                    ` : ''}
+
+                    <div class="form-group">
+                        <label class="form-label"><strong>General Justification</strong></label>
+                        <div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; white-space: pre-wrap; word-wrap: break-word;">
+                            ${appState.formData.justification || '(No additional justification provided)'}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('reviewSummary').innerHTML = summary;
+        }
+
+        function renderPositionsSummary() {
+            if (appState.formData.positions.length === 0) return '';
+
+            let html = '<div class="form-group"><label class="form-label"><strong>Requested Positions</strong></label>';
+            html += '<table class="table"><tr><th>Position</th><th>Headcount</th><th>Type</th></tr>';
+
+            appState.formData.positions.forEach(pos => {
+                html += `<tr><td>${pos.position}</td><td>${pos.headcount}</td><td>${pos.type}</td></tr>`;
+            });
+
+            html += '</table></div>';
+            return html;
+        }
+
+        function buildSerializableRequestPayload(extraData = {}) {
+            return {
+                ...appState.formData,
+                ...extraData,
+                uploadedFiles: (appState.formData.uploadedFiles || []).map(file => ({
+                    name: file.name,
+                    size: file.size,
+                    type: file.type
+                }))
+            };
+        }
+
+        function submitRequest() {
+            if (appState.isSubmitting) return;
+
+            appState.formData.justification = document.getElementById('justificationField')?.value || '';
+            setFormSubmitting(true);
+            showLoadingModal('Submitting request...');
+
+            console.log('Submitting request. Has files:', appState.formData.uploadedFiles && appState.formData.uploadedFiles.length > 0);
+
+            if (appState.formData.uploadedFiles && appState.formData.uploadedFiles.length > 0) {
+                // Convert files to base64 for Google Apps Script
+                console.log('Converting files to base64...');
+                convertFilesToBase64(appState.formData.uploadedFiles, (filesData) => {
+                    const payload = buildSerializableRequestPayload({ filesData: filesData });
+                    console.log('Files converted. Submitting via google.script.run');
+                    google.script.run
+                        .withSuccessHandler(onRequestSubmitted)
+                        .withFailureHandler(onSubmissionError)
+                        .createRequestWithFiles(payload);
+                });
+            } else {
+                // Use google.script.run for no files
+                console.log('Using google.script.run path (no files)');
+                const payload = buildSerializableRequestPayload();
+                google.script.run
+                    .withSuccessHandler(onRequestSubmitted)
+                    .withFailureHandler(onSubmissionError)
+                    .createRequest(payload);
+            }
+        }
+
+        function convertFilesToBase64(files, callback) {
+            const filesData = [];
+            let processed = 0;
+
+            files.forEach((file, idx) => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    filesData.push({
+                        name: file.name,
+                        data: e.target.result,
+                        type: file.type
+                    });
+                    processed++;
+                    console.log('File ' + idx + ' converted:', file.name);
+                    if (processed === files.length) {
+                        callback(filesData);
+                    }
+                };
+                reader.onerror = () => {
+                    hideLoadingModal();
+                    setFormSubmitting(false);
+                    console.error('Failed to read file:', file.name);
+                    alert('Failed to read file: ' + file.name);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function onRequestSubmitted(result) {
+            hideLoadingModal();
+            setFormSubmitting(false);
+            console.log('Request submitted result:', result);
+            
+            if (result && result.success) {
+                appState.myRequests = [];
+                appState.pendingApprovals = [];
+
+                document.getElementById('successRequestID').textContent = result.requestID;
+                document.getElementById('successModal').classList.add('active');
+                resetForm();
+            } else {
+                const errorMsg = result ? result.message : 'Unknown error occurred';
+                console.error('Request submission failed:', errorMsg);
+                alert('Error: ' + errorMsg);
+            }
+        }
+
+        function onSubmissionError(error) {
+            hideLoadingModal();
+            setFormSubmitting(false);
+            console.error('Request submission error:', error);
+            console.error('Stack:', error.stack);
+            alert('Request submission failed: ' + (error ? error.toString() : 'Unknown error'));
+        }
+
+        function showLoadingModal(message = 'Loading...') {
+            const messageEl = document.getElementById('loadingModalMessage');
+            if (messageEl) {
+                messageEl.textContent = message;
+            }
+            openModal('loadingModal');
+        }
+
+        function hideLoadingModal() {
+            closeModal('loadingModal');
+        }
+
+        // ============================================================
+        // UTILITY FUNCTIONS
+        // ============================================================
+
+        function handleFileUpload(event) {
+            const files = event.target.files;
+            if (!files.length) return;
+
+            if (!appState.formData.uploadedFiles) {
+                appState.formData.uploadedFiles = [];
+            }
+
+            for (let file of files) {
+                appState.formData.uploadedFiles.push(file);
+            }
+
+            renderUploadedFiles();
+            
+            // Clear file input so the same file can be selected again
+            event.target.value = '';
+        }
+
+        function renderUploadedFiles() {
+            const container = document.getElementById('uploadedFilesContainer');
+            if (!appState.formData.uploadedFiles || appState.formData.uploadedFiles.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+
+            let html = '<div style="background: var(--gray-50); padding: 1rem; border-radius: 8px; border-left: 4px solid var(--success);">';
+            html += '<strong style="color: var(--gray-700);">📎 Uploaded Files:</strong><ul style="margin: 0.5rem 0 0 0; padding-left: 1.5rem; color: var(--gray-600);">';
+            
+            appState.formData.uploadedFiles.forEach((file, idx) => {
+                const size = (file.size / 1024).toFixed(2) + ' KB';
+                html += `<li>${file.name} (${size}) <button style="margin-left: 0.5rem; padding: 0.25rem 0.5rem; font-size: 0.8rem; background: #ef4444; color: white; border: none; border-radius: 4px; cursor: pointer;" onclick="removeUploadedFile(${idx})">Remove</button></li>`;
+            });
+            
+            html += '</ul></div>';
+            container.innerHTML = html;
+        }
+
+        function removeUploadedFile(idx) {
+            appState.formData.uploadedFiles.splice(idx, 1);
+            renderUploadedFiles();
+            
+            // Clear file input to allow re-selection of removed file
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.value = '';
+            }
+        }
+
+        function showAlert(message, type) {
+            const alertsContainer = document.getElementById('formAlerts');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            alertsContainer.appendChild(alertDiv);
+
+            setTimeout(() => alertDiv.remove(), 5000);
+        }
+
+        function resetForm() {
+            document.getElementById('categoryField').value = '';
+            document.getElementById('divisionField').value = '';
+            document.getElementById('groupField').value = '';
+            document.getElementById('departmentField').value = '';
+            document.getElementById('sectionField').value = '';
+            document.getElementById('unitField').value = '';
+            document.getElementById('lineField').value = '';
+            document.querySelector('input[name="requestType"]').checked = false;
+            appState.formData.positions = [];
+
+            document.querySelectorAll('.form-step').forEach(step => {
+                step.style.display = 'none';
+            });
+            document.querySelector('.form-step[data-step="1"]').style.display = 'block';
+            updateStepper(1);
+        }
+
+        function switchRole() {
+            const newRole = appState.userRole === 'Requestor' ? 'Approver' : 'Requestor';
+            appState.userRole = newRole;
+            document.getElementById('currentRole').textContent = 'Role: ' + newRole;
+
+            const approvalNav = document.getElementById('approvalNav');
+            if (approvalNav) {
+                approvalNav.style.display = (newRole === 'Approver' || newRole === 'Admin') ? 'block' : 'none';
+            }
+
+            if (newRole === 'Approver' || newRole === 'Admin') {
+                loadPendingApprovals(true);
+            } else {
+                updateNavigationBadges();
+            }
+
+            // Note: In production, this would call backend to verify permission
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function goToDashboard() {
+            closeModal('successModal');
+            switchTab('dashboard');
+        }
+    </script>
+</body>
+</html>
