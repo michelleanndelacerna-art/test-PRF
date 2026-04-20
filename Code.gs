@@ -721,20 +721,28 @@ function getOrgApprovalSteps(division, group, department, section, unit, line) {
     ].filter(step => step.approver);
   }
 
-  if (unit && line && structure[division] && structure[division][group] && structure[division][group][department] &&
-      structure[division][group][department][section] && structure[division][group][department][section][unit] &&
-      structure[division][group][department][section][unit][line]) {
-    const exactSteps = buildSteps(structure[division][group][department][section][unit][line]);
+  if (unit && line && structure[division] &&
+      structure[division].groups && structure[division].groups[group] &&
+      structure[division].groups[group].departments && structure[division].groups[group].departments[department] &&
+      structure[division].groups[group].departments[department].sections && structure[division].groups[group].departments[department].sections[section] &&
+      structure[division].groups[group].departments[department].sections[section].units && structure[division].groups[group].departments[department].sections[section].units[unit] &&
+      structure[division].groups[group].departments[department].sections[section].units[unit].lines && structure[division].groups[group].departments[department].sections[section].units[unit].lines[line]) {
+    const exactSteps = buildSteps(structure[division].groups[group].departments[department].sections[section].units[unit].lines[line]);
     if (exactSteps.length) return exactSteps;
   }
 
-  if (structure[division] && structure[division][group] && structure[division][group][department] &&
-      structure[division][group][department][section]) {
-    const sectionData = structure[division][group][department][section];
+  if (structure[division] &&
+      structure[division].groups && structure[division].groups[group] &&
+      structure[division].groups[group].departments && structure[division].groups[group].departments[department] &&
+      structure[division].groups[group].departments[department].sections && structure[division].groups[group].departments[department].sections[section]) {
+    const sectionData = structure[division].groups[group].departments[department].sections[section].units;
     for (const unitKey in sectionData) {
-      for (const lineKey in sectionData[unitKey]) {
-        const sectionSteps = buildSteps(sectionData[unitKey][lineKey]);
-        if (sectionSteps.length) return sectionSteps;
+      const linesData = sectionData[unitKey].lines;
+      if (linesData) {
+        for (const lineKey in linesData) {
+          const sectionSteps = buildSteps(linesData[lineKey]);
+          if (sectionSteps.length) return sectionSteps;
+        }
       }
     }
   }
@@ -1932,7 +1940,11 @@ function getApproverEmailFromMasterList(request, approverRole) {
 }
 
 function getApproverEmailByRole(roleLabel, request = null) {
-  const normalizedLabel = (roleLabel || "").toString().trim().toLowerCase();
+  const trimmedRole = (roleLabel || "").toString().trim();
+  if (trimmedRole.indexOf("@") !== -1) {
+    return trimmedRole;
+  }
+  const normalizedLabel = trimmedRole.toLowerCase();
   
   // Hardcoded fallback for system roles (can be changed in Users sheet later)
   const systemRoleEmails = {
